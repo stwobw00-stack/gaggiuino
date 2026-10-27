@@ -1,0 +1,1044 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#24599A">
+<style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}img{max-width:100%}</style>
+</head>
+<body>
+<title>Gaggiuino Profilwerkstatt</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: Werkbank – links die Bohnendose (Liste), rechts Bohne → Profil → Diagramm → Phasen → Dial-in, wie ein Messgerät aus Edelstahl mit Crema-Akzent */
+:root{
+  --bg:#E8EBED; --surface:#F7F8F9; --sunk:#DDE2E5; --ink:#1A1E21; --muted:#5A646B; --line:#C6CDD2;
+  --accent:#B0600C; --accent-ink:#FFFFFF; --press:#24599A; --flow:#23806B; --good:#2C7A4C; --warn:#A6461B;
+  --display:'Barlow Condensed','Arial Narrow',system-ui,sans-serif;
+  --body:'IBM Plex Sans',system-ui,-apple-system,'Segoe UI',sans-serif;
+  --mono:'IBM Plex Mono',ui-monospace,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#101315; --surface:#191D20; --sunk:#0B0D0F; --ink:#E3E7EA; --muted:#97A1A9; --line:#2D3439;
+  --accent:#E59B42; --accent-ink:#1A1205; --press:#73A9EC; --flow:#4EC3A5; --good:#5DC68A; --warn:#E8895B; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#101315; --surface:#191D20; --sunk:#0B0D0F; --ink:#E3E7EA; --muted:#97A1A9; --line:#2D3439;
+  --accent:#E59B42; --accent-ink:#1A1205; --press:#73A9EC; --flow:#4EC3A5; --good:#5DC68A; --warn:#E8895B; color-scheme:dark}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{background:var(--bg);color:var(--ink);font:15px/1.5 var(--body);padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:20px 48px}
+h1,h2,h3{font-family:var(--display);font-weight:600;letter-spacing:.01em;line-height:1.1;margin:0;text-wrap:balance}
+h1{font-size:2rem}
+h2{font-size:1.45rem}
+h3{font-size:1.1rem}
+button,input,select,textarea{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.wrap{max-width:1180px;margin:0 auto;display:flex;flex-direction:column;gap:20px}
+header.top{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:8px 20px;border-bottom:2px solid var(--ink);padding-bottom:10px}
+header.top p{margin:0;color:var(--muted);max-width:60ch}
+.status{font:12px var(--mono);color:var(--muted)}
+.grid{display:grid;grid-template-columns:270px minmax(0,1fr);gap:20px;align-items:start}
+@media (max-width:860px){.grid{grid-template-columns:minmax(0,1fr)}}
+.label{font:600 11px var(--body);text-transform:uppercase;letter-spacing:.09em;color:var(--muted)}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:16px;display:flex;flex-direction:column;gap:14px;min-width:0}
+/* Bohnenliste */
+.beans{display:flex;flex-direction:column;gap:6px}
+.bean{display:grid;grid-template-columns:14px minmax(0,1fr);gap:10px;align-items:start;text-align:left;width:100%;background:transparent;border:1px solid transparent;border-radius:5px;padding:9px 10px;cursor:pointer}
+.bean:hover{background:var(--sunk)}
+.bean[aria-current="true"]{border-color:var(--ink);background:var(--bg)}
+.bean b{display:block;font-weight:600;overflow-wrap:anywhere}
+.bean small{color:var(--muted);font-size:12.5px}
+.dot{width:14px;height:14px;border-radius:50%;margin-top:4px;box-shadow:inset 0 0 0 1px rgba(0,0,0,.25)}
+.btn{border:1px solid var(--ink);background:transparent;border-radius:4px;padding:7px 12px;cursor:pointer;font-weight:500}
+.btn:hover{background:var(--sunk)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.btn.primary:hover{filter:brightness(1.08)}
+.btn.small{padding:4px 9px;font-size:13px}
+.btn.danger{border-color:var(--warn);color:var(--warn)}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+/* Formular */
+form{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:14px 16px}
+.f{display:flex;flex-direction:column;gap:5px;min-width:0}
+.c2{grid-column:span 2}.c3{grid-column:span 3}.c4{grid-column:span 4}.c6{grid-column:span 6}
+@media (max-width:620px){form{grid-template-columns:repeat(2,minmax(0,1fr))}.c3,.c4,.c6{grid-column:span 2}.c2{grid-column:span 1}}
+@media (max-width:420px){.c2{grid-column:span 2}}
+input[type=text],input[type=number],input[type=date],select{background:var(--bg);border:1px solid var(--line);border-radius:4px;padding:7px 9px;width:100%;min-width:0}
+input:focus,select:focus{border-color:var(--ink)}
+.seg{display:flex;flex-wrap:wrap;gap:0;border:1px solid var(--line);border-radius:4px;overflow:hidden}
+.seg label{flex:1 1 auto;position:relative;cursor:pointer}
+.seg input{position:absolute;opacity:0;inset:0;cursor:pointer}
+.seg span{display:flex;align-items:center;justify-content:center;gap:6px;padding:7px 8px;font-size:13.5px;text-align:center;border-right:1px solid var(--line);height:100%;white-space:nowrap}
+.seg label:last-child span{border-right:0}
+.seg input:checked+span{background:var(--ink);color:var(--bg)}
+.seg input:focus-visible+span{outline:2px solid var(--accent);outline-offset:-2px}
+.sw{width:10px;height:10px;border-radius:50%;flex:none;box-shadow:inset 0 0 0 1px rgba(0,0,0,.3)}
+.check{flex-direction:row;align-items:center;gap:8px;padding-top:22px}
+.banner{background:var(--sunk);border-left:3px solid var(--accent);padding:10px 12px;border-radius:3px;font-size:14px}
+/* Profil-Kopf */
+.gauges{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:1px;background:var(--line);border:1px solid var(--line);border-radius:5px;overflow:hidden}
+@media (max-width:620px){.gauges{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.g{background:var(--surface);padding:10px 12px;display:flex;flex-direction:column;gap:2px}
+.g .v{font:600 1.9rem/1 var(--display);font-variant-numeric:tabular-nums}
+.g .v small{font-size:1rem;color:var(--muted);font-weight:500;margin-left:2px}
+.g .u{font-size:12.5px;color:var(--muted)}
+.styles{display:flex;flex-wrap:wrap;gap:6px}
+.chip{border:1px solid var(--line);border-radius:999px;padding:4px 11px;background:transparent;cursor:pointer;font-size:13.5px}
+.chip[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.chip em{font-style:normal;font-size:11px;opacity:.75;margin-left:4px}
+.lead{margin:0;max-width:70ch}
+.chart{overflow-x:auto}
+.chart svg{display:block;width:100%;min-width:520px;height:auto}
+.legend{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:12.5px;color:var(--muted)}
+.legend i{display:inline-block;width:18px;height:0;border-top:2.5px solid;vertical-align:middle;margin-right:5px}
+/* Phasen */
+.phases{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px}
+.ph{border:1px solid var(--line);border-radius:5px;background:var(--bg);display:flex;flex-direction:column;min-width:0}
+.ph header{display:flex;justify-content:space-between;align-items:baseline;gap:8px;padding:9px 12px;border-bottom:1px solid var(--line)}
+.ph header .n{font:500 12px var(--mono);color:var(--muted)}
+.ph .type{font:600 11px var(--body);letter-spacing:.08em;text-transform:uppercase;padding:2px 7px;border-radius:3px;color:var(--surface)}
+.ph .type.flow{background:var(--flow)}.ph .type.pressure{background:var(--press)}
+.ph dl{margin:0;padding:8px 12px;display:grid;grid-template-columns:auto minmax(0,1fr);gap:4px 12px;font-size:13.5px}
+.ph dt{color:var(--muted)}
+.ph dd{margin:0;font-family:var(--mono);font-size:13px;font-variant-numeric:tabular-nums;text-align:right;overflow-wrap:anywhere}
+.ph p{margin:0;padding:0 12px 11px;font-size:13px;color:var(--muted)}
+.global{display:flex;flex-wrap:wrap;gap:6px 18px;font-family:var(--mono);font-size:13px;background:var(--sunk);padding:9px 12px;border-radius:4px}
+.global b{font-family:var(--body);font-weight:600;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-right:6px}
+.why{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:8px}
+.why li{display:grid;grid-template-columns:120px minmax(0,1fr);gap:12px;font-size:14px;border-top:1px solid var(--line);padding-top:8px}
+@media (max-width:520px){.why li{grid-template-columns:minmax(0,1fr);gap:2px}}
+.why b{font-weight:600}
+.two{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:20px}
+@media (max-width:980px){.two{grid-template-columns:minmax(0,1fr)}}
+/* Dial-in */
+.symptoms{display:flex;flex-wrap:wrap;gap:6px}
+.sugs{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
+.sugs li{display:grid;grid-template-columns:22px minmax(0,1fr) auto;gap:10px;align-items:start;background:var(--bg);border:1px solid var(--line);border-radius:5px;padding:9px 10px;font-size:14px}
+.sugs .k{font:600 12px var(--mono);color:var(--muted);padding-top:2px}
+.sugs .done{color:var(--good);font-size:13px;font-weight:600;white-space:nowrap}
+.adj{display:flex;flex-wrap:wrap;gap:6px}
+.adj span{font:12.5px var(--mono);background:var(--sunk);padding:3px 8px;border-radius:3px}
+.log{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px;font-size:13.5px}
+.log li.plain{border-top:1px solid var(--line);padding-top:6px}
+.log time{font:12px var(--mono);color:var(--muted);margin-right:8px}
+.entry{border:1px solid var(--line);border-radius:5px;background:var(--bg);padding:9px 11px;display:flex;flex-direction:column;gap:6px;min-width:0}
+.entry .eh{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.entry .eh time{margin:0}
+.badge{font:600 10.5px var(--body);letter-spacing:.08em;text-transform:uppercase;padding:2px 7px;border-radius:3px;color:var(--surface)}
+.badge.adjust{background:var(--accent);color:var(--accent-ink)}.badge.good{background:var(--good)}.badge.reset{background:var(--muted)}
+.entry .bn{font-weight:600;font-size:14.5px;overflow-wrap:anywhere}
+.entry .bn span{font-weight:500;color:var(--muted)}
+.entry .bm{font-size:12.5px;color:var(--muted)}
+.vals{display:flex;flex-wrap:wrap;gap:4px}
+.vals span{font:12px var(--mono);background:var(--sunk);padding:2px 7px;border-radius:3px;font-variant-numeric:tabular-nums}
+.entry p{margin:0;font-size:13.5px}
+.entry p b{font-weight:600}
+.diff{display:flex;flex-wrap:wrap;gap:4px}
+.diff span{font:12px var(--mono);border:1px solid var(--accent);color:var(--ink);padding:1px 7px;border-radius:3px}
+/* Reiter & Statistik */
+.tabs{display:flex;gap:0;border-bottom:1px solid var(--line);margin-top:-8px;overflow-x:auto}
+.tabs button{background:transparent;border:0;border-bottom:3px solid transparent;padding:9px 16px 8px;font:600 1.12rem var(--display);letter-spacing:.02em;color:var(--muted);cursor:pointer;white-space:nowrap}
+.tabs button[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--accent)}
+.tabs button:hover{color:var(--ink)}
+.statsgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px;align-items:start}
+.statsgrid .wide{grid-column:1/-1}
+@media (max-width:860px){.statsgrid{grid-template-columns:minmax(0,1fr)}}
+.kpis{grid-template-columns:repeat(5,minmax(0,1fr))}
+@media (max-width:760px){.kpis{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.bars{display:flex;flex-direction:column;gap:8px;margin:0;padding:0;list-style:none}
+.bars li{display:grid;grid-template-columns:minmax(0,9rem) minmax(0,1fr) auto;gap:10px;align-items:center;font-size:13.5px}
+.bars .nm{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bars .track{height:12px;background:var(--sunk);border-radius:2px;overflow:hidden}
+.bars .fill{height:100%;background:var(--accent);border-radius:2px}
+.bars .n{font:12.5px var(--mono);font-variant-numeric:tabular-nums;color:var(--muted);white-space:nowrap}
+.tbl{overflow-x:auto}
+.tbl table{width:100%;border-collapse:collapse;font-size:13.5px}
+.tbl th{font:600 11px var(--body);letter-spacing:.08em;text-transform:uppercase;color:var(--muted);text-align:left;padding:6px 8px;border-bottom:1px solid var(--ink);white-space:nowrap}
+.tbl td{padding:7px 8px;border-bottom:1px solid var(--line);vertical-align:middle}
+.tbl td.num{font-family:var(--mono);font-variant-numeric:tabular-nums;text-align:right;white-space:nowrap}
+.tbl th.num{text-align:right}
+.tbl .rk{font:600 1.15rem var(--display);color:var(--accent);width:2rem}
+.tbl .hi{background:var(--sunk);font-weight:600}
+.stars{color:var(--accent);letter-spacing:1px;white-space:nowrap}
+.stars .off{color:var(--line)}
+.insights{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:6px;font-size:14px}
+.insights li{display:grid;grid-template-columns:14px minmax(0,1fr);gap:10px}
+.insights .dot{margin-top:4px}
+.chipcol{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:14px}
+.chipcol ul{list-style:none;margin:6px 0 0;padding:0;display:flex;flex-direction:column;gap:4px;font-size:13.5px}
+.chipcol li{display:flex;justify-content:space-between;gap:8px;border-bottom:1px dotted var(--line);padding-bottom:3px}
+.chipcol li span:last-child{font:12.5px var(--mono);color:var(--muted)}
+.filters{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px 12px}
+.filters select{background:var(--bg);border:1px solid var(--line);border-radius:4px;padding:6px 8px;width:100%;min-width:0}
+.weekchart svg{display:block;width:100%;height:auto}
+.edgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:10px 12px}
+.entry.editing{border-color:var(--ink)}
+.entry.editing input,.entry.editing select{background:var(--surface);border:1px solid var(--line);border-radius:4px;padding:6px 8px;width:100%;min-width:0}
+.logbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between;margin-bottom:8px}
+.note{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:10px}
+.note input{flex:1 1 180px;background:var(--bg);border:1px solid var(--line);border-radius:4px;padding:6px 9px;min-width:0}
+.headline{margin:0;font-size:1.05rem;line-height:1.45;max-width:72ch;padding:10px 12px;background:var(--sunk);border-radius:4px}
+.headline b{font-weight:600}
+.steps{margin:0;padding:0;list-style:none;counter-reset:st;display:flex;flex-direction:column;gap:0}
+.steps li{counter-increment:st;display:grid;grid-template-columns:30px minmax(0,1fr);gap:10px;padding:10px 0;border-top:1px solid var(--line);font-size:14.5px}
+.steps li::before{content:counter(st);font:600 1.3rem/1 var(--display);color:var(--accent);padding-top:1px}
+.steps b{font-weight:600}
+.steps code{font:12.5px var(--mono);background:var(--sunk);padding:1px 5px;border-radius:3px;white-space:nowrap}
+.muted{color:var(--muted)}
+.empty{color:var(--muted);font-size:14px;margin:0}
+@media (prefers-reduced-motion:no-preference){.chip,.btn,.bean{transition:background .15s,border-color .15s}}
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <div>
+      <h1>Gaggiuino Profilwerkstatt</h1>
+      <p>Bohne eintragen, Profil ablesen, am Gaggiuino einstellen. Nach dem Shot sagst du, wie er geschmeckt hat, und bekommst konkrete Korrekturen.</p>
+    </div>
+    <span class="status" id="status">Lädt …</span>
+  </header>
+
+  <nav class="tabs" role="tablist" aria-label="Bereiche">
+    <button type="button" role="tab" id="tabWork" aria-controls="viewWork" aria-selected="true" data-view="work">Profil-Werkstatt</button>
+    <button type="button" role="tab" id="tabStats" aria-controls="viewStats" aria-selected="false" data-view="stats">Tagebuch &amp; Statistik</button>
+  </nav>
+
+  <section id="viewStats" role="tabpanel" aria-labelledby="tabStats" hidden>
+    <div id="statsBody" class="statsgrid"></div>
+    <section class="panel" aria-labelledby="hJournal" style="margin-top:20px">
+      <div class="row" style="justify-content:space-between"><h2 id="hJournal">Tagebuch</h2><span class="bm" id="jCount"></span></div>
+      <div class="filters">
+        <div class="f"><label class="label" for="jBean">Bohne</label><select id="jBean"></select></div>
+        <div class="f"><label class="label" for="jRoast">Röstgrad</label><select id="jRoast"></select></div>
+        <div class="f"><label class="label" for="jStyle">Profil</label><select id="jStyle"></select></div>
+        <div class="f"><label class="label" for="jKind">Art</label><select id="jKind"><option value="">Alle</option><option value="good">Lecker</option><option value="adjust">Korrektur</option><option value="reset">Zurückgesetzt</option></select></div>
+        <div class="f"><label class="label" for="jSort">Sortierung</label><select id="jSort"><option value="new">Neueste zuerst</option><option value="best">Beste Bewertung zuerst</option></select></div>
+      </div>
+      <ul class="log" id="journal"></ul>
+      <button class="btn small" type="button" id="moreJournal" hidden>Ältere Einträge zeigen</button>
+    </section>
+  </section>
+
+  <div class="grid" id="viewWork" role="tabpanel" aria-labelledby="tabWork">
+    <aside class="panel" aria-label="Deine Bohnen">
+      <div class="row" style="justify-content:space-between">
+        <h2>Deine Bohnen</h2>
+        <button class="btn small" id="newBean" type="button">+ Neue Bohne</button>
+      </div>
+      <div class="beans" id="beanList"></div>
+    </aside>
+
+    <main style="display:flex;flex-direction:column;gap:20px;min-width:0">
+      <section class="panel" aria-labelledby="hBean">
+        <div class="row" style="justify-content:space-between">
+          <h2 id="hBean">Bohne</h2>
+          <div class="row" id="beanActions"></div>
+        </div>
+        <div class="banner" id="exampleBanner" hidden>Das ist ein Beispiel. Ändere die Angaben auf deine Bohne und tippe auf <b>Bohne speichern</b>, damit sie in deiner Liste bleibt.</div>
+        <form id="beanForm" autocomplete="off">
+          <div class="f c3"><label class="label" for="fName">Name</label><input type="text" id="fName" name="name" placeholder="z. B. Äthiopien Guji"></div>
+          <div class="f c3"><label class="label" for="fRoaster">Rösterei</label><input type="text" id="fRoaster" name="roaster" placeholder="optional"></div>
+          <div class="f c6"><span class="label" id="lRoast">Röstgrad</span><div class="seg" role="radiogroup" aria-labelledby="lRoast" id="roastSeg"></div></div>
+          <div class="f c2"><label class="label" for="fProcess">Aufbereitung</label>
+            <select id="fProcess" name="process"><option value="washed">Gewaschen</option><option value="honey">Honey</option><option value="natural">Natural</option><option value="anaerob">Anaerob / Experimentell</option></select></div>
+          <div class="f c2"><label class="label" for="fRobusta">Robusta-Anteil (%)</label>
+            <input type="number" id="fRobusta" name="robusta" min="0" max="100" step="5" list="robList" placeholder="0 = 100 % Arabica">
+            <datalist id="robList"><option value="0"></option><option value="10"></option><option value="20"></option><option value="30"></option><option value="50"></option><option value="100"></option></datalist></div>
+          <div class="f c2"><label class="label" for="fDate">Röstdatum</label><input type="date" id="fDate" name="roastDate"></div>
+          <div class="f c2"><span class="label" id="lDrink">Getränk</span><div class="seg" role="radiogroup" aria-labelledby="lDrink">
+            <label><input type="radio" name="drink" value="pur" id="dPur"><span>Pur</span></label>
+            <label><input type="radio" name="drink" value="milch" id="dMilch"><span>Mit Milch</span></label></div></div>
+          <div class="f c4"><span class="label" id="lGoal">Geschmacksziel</span><div class="seg" role="radiogroup" aria-labelledby="lGoal">
+            <label><input type="radio" name="goal" value="clarity" id="gClarity"><span>Klar &amp; fruchtig</span></label>
+            <label><input type="radio" name="goal" value="balance" id="gBalance"><span>Ausgewogen</span></label>
+            <label><input type="radio" name="goal" value="body" id="gBody"><span>Körper &amp; Schoko</span></label></div></div>
+          <div class="f c2"><label class="label" for="fDose">Dosis (g)</label><input type="number" id="fDose" name="dose" min="7" max="25" step="0.5"></div>
+          <div class="f c2"><label class="label" for="fDecaf">Koffein</label>
+            <select id="fDecaf" name="decaf"><option value="0">Mit Koffein</option><option value="1">Entkoffeiniert</option></select></div>
+          <div class="f c2"><label class="label" for="fStyle">Profilstil</label><select id="fStyle" name="style"></select></div>
+          <div class="f c6"><label class="label" for="fGrind">Mahlgrad / Notiz</label><input type="text" id="fGrind" name="grind" placeholder="z. B. Niche 12"></div>
+        </form>
+      </section>
+
+      <section class="panel" aria-labelledby="hProfile">
+        <div class="row" style="justify-content:space-between">
+          <h2 id="hProfile">Empfohlenes Profil</h2>
+          <button class="btn small" type="button" id="copyBtn">Profil als Text kopieren</button>
+        </div>
+        <p class="headline" id="headline"></p>
+        <div class="gauges" id="gauges"></div>
+        <div>
+          <div class="label" style="margin-bottom:6px">Profilstil</div>
+          <div class="styles" id="styleChips"></div>
+        </div>
+        <p class="lead" id="styleLead"></p>
+        <div class="chart" id="chart"></div>
+        <div class="legend"><span><i style="border-color:var(--press)"></i>Druck-Ziel (bar)</span><span><i style="border-color:var(--flow)"></i>Fluss-Ziel (ml/s)</span><span><i style="border-color:var(--press);border-top-style:dashed;border-top-width:1.5px"></i>Druck-Limit</span><span><i style="border-color:var(--flow);border-top-style:dashed;border-top-width:1.5px"></i>Fluss-Limit</span></div>
+        <div>
+          <div class="label" style="margin-bottom:6px">Global profile settings</div>
+          <div class="global" id="globalSet"></div>
+        </div>
+        <div>
+          <div class="label" style="margin-bottom:8px">Phasen – so im Gaggiuino-Profileditor eintragen</div>
+          <div class="phases" id="phases"></div>
+        </div>
+        <div>
+          <h3 style="font-size:1.25rem;margin-bottom:10px">So stellst du es am Gaggiuino ein</h3>
+          <ol class="steps" id="steps"></ol>
+        </div>
+        <textarea id="copyArea" readonly hidden style="width:100%;min-height:160px;font:12px var(--mono);background:var(--bg);border:1px solid var(--line);border-radius:4px;padding:8px"></textarea>
+      </section>
+
+      <div class="two">
+        <section class="panel" aria-labelledby="hWhy">
+          <h2 id="hWhy">Warum diese Werte</h2>
+          <ul class="why" id="why"></ul>
+        </section>
+        <section class="panel" aria-labelledby="hDial">
+          <h2 id="hDial">Dial-in: Wie war der Shot?</h2>
+          <p class="lead muted" style="font-size:14px">Wähle, was du schmeckst oder siehst. Ändere immer nur eine Sache pro Shot, zuerst den Mahlgrad.</p>
+          <div class="symptoms" id="symptoms"></div>
+          <ul class="sugs" id="sugs"></ul>
+          <div id="adjBox"></div>
+          <div>
+            <div class="logbar">
+              <span class="label">Shot-Tagebuch</span>
+              <div class="styles" role="group" aria-label="Welche Einträge"><button type="button" class="chip" data-scope="bean" aria-pressed="true">Diese Bohne</button><button type="button" class="chip" data-scope="all" aria-pressed="false">Alle Bohnen</button></div>
+            </div>
+            <div class="note">
+              <input type="text" id="shotNote" placeholder="Notiz zum Shot, z. B. Mahlgrad 12, 31 s, schöne Crema" aria-label="Notiz zum Shot">
+              <button class="btn small" type="button" id="goodShot">Shot war lecker – merken</button>
+            </div>
+            <ul class="log" id="log"></ul>
+            <button class="btn small" type="button" id="moreLog" hidden style="margin-top:8px">Ältere Einträge zeigen</button>
+          </div>
+        </section>
+      </div>
+    </main>
+  </div>
+</div>
+
+<script>
+const $=s=>document.querySelector(s);
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const f1=n=>(Math.round(n*10)/10).toLocaleString('de-DE');
+const clamp=(v,a,b)=>Math.min(b,Math.max(a,v));
+const r05=v=>Math.round(v*2)/2;
+const r1=v=>Math.round(v*10)/10;
+
+const ROAST=[
+  {n:'Sehr hell',c:'#CDA672'},{n:'Hell',c:'#A87444'},{n:'Mittel',c:'#7B4C27'},{n:'Mittel-dunkel',c:'#573219'},{n:'Dunkel',c:'#33200F'}];
+const PROC={washed:{n:'Gewaschen',t:0,p:0},honey:{n:'Honey',t:-0.5,p:0},natural:{n:'Natural',t:-0.5,p:-0.5},anaerob:{n:'Anaerob',t:-1,p:-0.5}};
+const STYLES={
+  bloom:{n:'Blooming',s:'Fluss-gesteuert mit langer Bloom-Pause ohne Pumpe. Der Puck sättigt sich vollständig, danach läuft die Extraktion mit konstantem Fluss. Holt Süße und Frucht aus hellen, schwer löslichen Röstungen.'},
+  adaptive:{n:'Adaptiv',s:'Sanfte Preinfusion, kurzes Soak, Peak um 9 bar und danach fallender Druck, weil der Puck mit der Zeit an Widerstand verliert. Der Allrounder für mittlere Röstungen.'},
+  lever:{n:'Hebel',s:'Wie eine Hebelmaschine: niedrigerer Peak und lang abfallender Druck. Dunkle Röstungen lösen sich leicht, weniger Druck und Temperatur halten Bitterkeit und Asche zurück.'},
+  classic:{n:'Klassisch 9 bar',s:'Kurze Preinfusion, dann konstant 9 bar. Italienischer Stil mit viel Körper und Crema, gut für Milchgetränke.'},
+  turbo:{n:'Turbo',s:'Deutlich gröber gemahlen, 6 bar, schnell und lang (um 1:3). Klar und saftig bei hellen Röstungen und verzeiht Channeling.'},
+  zer0:{n:'Zer0',s:'Das Standardprofil von Gaggiuino-Entwickler Zer0: drei Fluss-Phasen. Sanft füllen bis max. 6 bar, kurz sättigen mit 1 ml/s, dann 3,5 ml/s bis zum Zielgewicht (um 1:3, 30–40 s). Gilt als guter Allrounder für alle Röstungen, am besten für mittel bis mittel-hell.'}
+};
+function autoStyle(b){const r=+b.roast;
+  if(r<=2) return b.goal==='body'?'adaptive':'bloom';
+  if(r===3) return b.goal==='clarity'?'bloom':'adaptive';
+  if(r===4) return b.goal==='clarity'?'adaptive':'lever';
+  return 'lever';}
+function styleOptions(r){return r<=2?['bloom','adaptive','turbo','zer0']:r===3?['adaptive','bloom','lever','zer0']:['lever','adaptive','classic','zer0'];}
+// alte Einträge speicherten 0/1/2 als Text (Arabica / bis 20 % / über 20 %)
+function robPct(b){const v=b.robusta;if(typeof v==='string'&&['0','1','2'].includes(v))return [0,15,35][+v];return clamp(Math.round(+v||0),0,100);}
+function ageDays(d){if(!d)return null;const t=new Date(d+'T12:00:00');if(isNaN(t))return null;return Math.max(0,Math.round((Date.now()-t)/864e5));}
+
+function acc(v,label){return{v,parts:[`${label} ${f1(v)}`],add(d,l){if(d){this.v+=d;this.parts.push(`${l} ${d>0?'+':'−'}${f1(Math.abs(d))}`);}return this;}};}
+
+/* ---------- Profil-Engine ---------- */
+function buildProfile(b){
+  const r=clamp(+b.roast||3,1,5), a=b.adj||{}, proc=PROC[b.process]||PROC.washed, age=ageDays(b.roastDate);
+  const decaf=b.decaf==='1', rob=robPct(b), milk=b.drink==='milch', goal=b.goal||'balance';
+  const style=(b.style&&b.style!=='auto'&&STYLES[b.style])?b.style:autoStyle(b);
+  const isFlow=style==='bloom'||style==='zer0';
+  const why=[];
+  const dose=clamp(+b.dose||18,7,25);
+
+  // Temperatur
+  const T=acc([96,94,92,90,88][r-1],`Röstgrad ${ROAST[r-1].n}`);
+  T.add(proc.t,proc.n).add(decaf?-1:0,'Entkoffeiniert').add(-r05(rob/40),`${rob} % Robusta`)
+   .add(goal==='clarity'?0.5:goal==='body'?-0.5:0,goal==='clarity'?'Ziel Klarheit':'Ziel Körper')
+   .add(age!==null&&age>35?0.5:0,'Ältere Bohne').add(a.temp||0,'Deine Korrektur');
+  const temp=clamp(r05(T.v),86,97);
+  why.push({k:'Temperatur',t:`${T.parts.join(' · ')} → <b>${f1(temp)} °C</b>. Helle Röstungen sind dicht und lösen sich schwer, sie brauchen mehr Hitze. Dunkle werden bei hoher Temperatur schnell bitter.`});
+
+  // Ratio
+  const R=style==='turbo'?acc(3.0,'Turbo-Stil'):style==='zer0'?acc(r<=3?3.0:r===4?2.6:2.3,'Zer0-Stil'):acc([2.5,2.2,2.0,1.8,1.6][r-1],'Röstgrad');
+  R.add(-r1(rob/200),`${rob} % Robusta`).add(milk?-0.2:0,'Mit Milch').add(goal==='clarity'?0.2:goal==='body'?-0.2:0,goal==='clarity'?'Ziel Klarheit':'Ziel Körper').add(a.ratio||0,'Deine Korrektur');
+  const ratio=clamp(r1(R.v),1.5,3.5), yieldG=Math.round(dose*ratio);
+  why.push({k:'Verhältnis',t:`${R.parts.join(' · ')} → <b>1:${f1(ratio)}</b>, also ${f1(dose)} g rein, ${yieldG} g in die Tasse. Mehr Wasser bringt Klarheit und Süße, weniger Wasser mehr Körper.`});
+
+  // Druck-Peak
+  let pBase={adaptive:9,classic:9,lever:r===5?7.5:r===4?8:8.5,turbo:6,bloom:9,zer0:9}[style];
+  const P=acc(pBase,`Stil ${STYLES[style].n}`);
+  if(!isFlow){
+    if(style!=='turbo') P.add(proc.p,proc.n).add(decaf?-0.5:0,'Entkoffeiniert').add(milk?0.5:0,'Mit Milch')
+      .add(goal==='body'?0.5:goal==='clarity'?-0.5:0,goal==='body'?'Ziel Körper':'Ziel Klarheit');
+    P.add(a.peak||0,'Deine Korrektur');
+  }
+  const peak=style==='turbo'?clamp(r05(P.v),4,7):clamp(r05(P.v),5,9.5);
+  const pEnd=style==='adaptive'?Math.max(4.5,peak-3):style==='lever'?r05(peak*0.55):peak;
+
+  // Fluss (Blooming)
+  const F=style==='zer0'?acc(3.5,'Zer0-Stil'):acc(r<=1?2.2:r===2?2.0:1.8,'Röstgrad');
+  F.add(goal==='clarity'?0.2:goal==='body'?-0.2:0,goal==='clarity'?'Ziel Klarheit':'Ziel Körper').add(a.flow||0,'Deine Korrektur');
+  const exFlow=clamp(r1(F.v),1.2,style==='zer0'?4.5:3);
+  if(isFlow) why.push({k:'Fluss',t:`${F.parts.join(' · ')} → <b>${f1(exFlow)} ml/s</b> in der Extraktion, Druck-Limit 9 bar. Der Fluss ist das Ziel, der Druck ergibt sich aus dem Mahlgrad.`});
+  else why.push({k:'Druck',t:`${P.parts.join(' · ')} → Peak <b>${f1(peak)} bar</b>${pEnd!==peak?`, fallend auf ${f1(pEnd)} bar`:''}. ${style==='turbo'?'Niedriger Druck und grobes Mehl lassen viel Wasser gleichmäßig durch.':'Weniger Druck heißt sanftere Extraktion und weniger Bitterkeit, mehr Druck mehr Körper.'}`});
+
+  // Preinfusion
+  const PI=acc({bloom:4,adaptive:4,lever:r===5?2.5:3,classic:3,turbo:4.5,zer0:5}[style],'Stil');
+  PI.add(decaf?-0.5:0,'Entkoffeiniert').add(a.piFlow||0,'Deine Korrektur');
+  const piFlow=clamp(r05(PI.v),1.5,6);
+  const piStop={bloom:3,adaptive:3,lever:2,classic:3,turbo:5,zer0:6}[style];
+
+  // Soak
+  const S=acc({bloom:r<=1?20:r===2?15:12,adaptive:6,lever:r===5?3:5,classic:0,turbo:0,zer0:[14,12,10,7,5][r-1]}[style],'Stil');
+  const hasSoakBase=S.v>0;
+  if(hasSoakBase){
+    if(age!==null&&age<7) S.add(style==='bloom'?4:2,'Frisch geröstet');
+    if(age!==null&&age>30) S.add(-2,'Ältere Bohne');
+    if(decaf) S.add(-1,'Entkoffeiniert');
+  }
+  S.add(a.soak||0,'Deine Korrektur');
+  const soak=clamp(Math.round(S.v),0,30);
+  if(soak>0) why.push({k:style==='bloom'?'Bloom':'Soak',t:`${S.parts.join(' · ')} → <b>${soak} s</b>. Der Puck quillt auf und gibt CO₂ ab, so fließt das Wasser danach gleichmäßiger durch. Frische Bohnen brauchen länger.`});
+  why.push({k:'Preinfusion',t:`Mit ${f1(piFlow)} ml/s füllen, bis ${f1(piStop)} bar anliegen. ${piFlow<=3?'Langsames Füllen schont den Puck, wichtig bei dunklen und entkoffeinierten Bohnen.':'Zügiges Füllen spart Zeit, ohne den Puck zu stören.'}`});
+
+  if(rob>0) why.push({k:'Robusta',t:`${rob} % Robusta: löst sich leicht, bringt viel Crema und Körper, wird aber schnell bitter und gummiartig. Deshalb etwas kühler (−${f1(r05(rob/40))} °C) und etwas kürzer (−${f1(r1(rob/200))} im Verhältnis).${rob>=50?' Bei so viel Robusta ruhig auch den Stil „Klassisch 9 bar“ probieren.':''}`});
+
+  // Frische
+  if(age!==null){
+    let t=`Geröstet vor ${age} Tag${age===1?'':'en'}. `;
+    if(age<4) t+='Sehr frisch: viel CO₂, der Shot läuft unruhig. Ideal sind 7–21 Tage Ruhe (helle Röstungen eher 14–30).';
+    else if(age<7) t+='Noch recht frisch, deshalb längere Sättigungsphase.';
+    else if(age<=30) t+='Gutes Fenster, die Bohne ist entgast und noch aromatisch.';
+    else t+='Die Bohne hat Aroma verloren. Feiner mahlen und etwas heißer brühen hilft.';
+    why.push({k:'Frische',t});
+  }
+
+  // Ramp
+  const rampT=clamp({bloom:4,adaptive:4,lever:3,classic:3,turbo:0,zer0:10}[style]+(a.ramp||0),0,15);
+  if(style==='zer0') why.push({k:'Zer0-Original',t:'Im Original: 95 °C, Stopp bei 49 g (um 1:3), Phase 2 dauert 10 s, Extraktion mit 3,5 ml/s. Hier sind Temperatur, Verhältnis und Phase 2 an deine Bohne angepasst, so wie es die Profilbeschreibung empfiehlt: je dunkler, desto kürzer.'});
+
+  // Phasen
+  const ph=[];
+  let extrDur;
+  if(style==='zer0'){
+    const soakZ=Math.max(3,soak);
+    ph.push({n:'Preinfusion',type:'flow',s:0,e:piFlow,lim:piStop,curve:'Ease-Out',time:15,ramp:15,stop:[`Pressure above ${f1(piStop)} bar`,'Time 15 s'],adaptive:false,dur:clamp(48/piFlow,5,15),
+      hint:`Fluss sanft auf ${f1(piFlow)} ml/s bei höchstens ${f1(piStop)} bar. Der Druck muss die ${f1(piStop)} bar nicht erreichen, deshalb der harte Stopp nach 15 s.`});
+    ph.push({n:'Soak',type:'flow',s:0,e:1,lim:2.5,curve:'Ease-In-Out',time:soakZ,ramp:soakZ,stop:[],adaptive:false,dur:soakZ,
+      hint:'Sehr wenig Fluss bei max. 2,5 bar, der Puck sättigt sich. Helle Röstungen länger, dunkle kürzer.'});
+    const rem=yieldG-2, rv=exFlow*rampT*0.6;
+    extrDur=clamp(rv>=rem?rampT*rem/rv:rampT+(rem-rv)/exFlow,8,60);
+    ph.push({n:'Extraktion',type:'flow',s:0,e:exFlow,lim:9,curve:'Ease-Out',time:rampT,ramp:rampT,stop:[],adaptive:false,dur:extrDur,
+      hint:`Fluss in ${rampT} s auf ${f1(exFlow)} ml/s, dann halten, bis das Zielgewicht erreicht ist. Diese Phase hat keine eigene Stop-Bedingung.`});
+  } else {
+  const piTime=style==='turbo'?10:15;
+  const piDur=clamp(36/piFlow,3,piTime);
+  ph.push({n:'Preinfusion',type:'flow',s:piFlow,e:piFlow,lim:piStop+(style==='turbo'?0.5:0.5),curve:'Instant',time:piTime,stop:[`Pressure above ${f1(piStop)} bar`],adaptive:false,dur:piDur,
+    hint:'Füllt den Siebträger. Endet, sobald der Druck steigt, also der Puck voll ist.'});
+  if(soak>0){
+    if(style==='bloom') ph.push({n:'Bloom',type:'flow',s:0,e:0,lim:null,curve:'Instant',time:soak,stop:['Weight above 4 g'],adaptive:false,dur:soak,
+      hint:'Pumpe aus, der Druck sinkt langsam. Erste Tropfen sind normal. Läuft schon vorher viel durch, feiner mahlen.'});
+    else ph.push({n:'Soak',type:'pressure',s:piStop-0.5,e:piStop-0.5,lim:1.5,curve:'Instant',time:soak,stop:[],adaptive:false,dur:soak,
+      hint:'Niedriger Haltedruck, der Puck sättigt sich gleichmäßig.'});
+  }
+  if(style==='bloom'){
+    ph.push({n:'Anstieg',type:'flow',s:0,e:exFlow,lim:9,curve:'Ease-Out',time:rampT,stop:[],adaptive:true,dur:rampT,
+      hint:'Fluss sanft hochfahren. Adaptive glättet den Übergang aus dem Bloom.'});
+    const end=r1(Math.max(1.2,exFlow-0.3));
+    extrDur=clamp((yieldG-3-exFlow*rampT*0.5)/((exFlow+end)/2),8,60);
+    ph.push({n:'Extraktion',type:'flow',s:exFlow,e:end,lim:9,curve:'Linear',time:Math.ceil(extrDur*1.3),stop:[],adaptive:false,dur:extrDur,
+      hint:'Konstanter Fluss bei max. 9 bar. Gaggiuino stoppt am Zielgewicht.'});
+  } else if(style==='turbo'){
+    extrDur=clamp(yieldG/3.5,8,40);
+    ph.push({n:'Extraktion',type:'pressure',s:peak,e:peak,lim:4.5,curve:'Ease-Out',time:Math.ceil(extrDur*1.4),stop:[],adaptive:true,dur:extrDur,
+      hint:'Konstanter niedriger Druck, Fluss auf 4,5 ml/s begrenzt.'});
+  } else {
+    const startP=soak>0?piStop-0.5:piStop;
+    ph.push({n:'Anstieg',type:'pressure',s:startP,e:peak,lim:style==='lever'?2.5:3,curve:'Ease-Out',time:rampT,stop:[],adaptive:true,dur:rampT,
+      hint:'Druck zügig auf den Peak bringen. Adaptive startet die Rampe dort, wo die Phase davor wirklich endete.'});
+    const avg={adaptive:2.0,lever:1.7,classic:2.1}[style];
+    extrDur=clamp((yieldG-avg*rampT*0.5)/avg,8,60);
+    ph.push({n:style==='classic'?'Extraktion':'Druckabfall',type:'pressure',s:peak,e:pEnd,lim:style==='lever'?2.5:3,curve:'Linear',time:Math.ceil(extrDur*1.3),stop:[],adaptive:false,dur:extrDur,
+      hint:style==='classic'?'Konstant halten. Das Fluss-Limit fängt einen zu groben Puck ab.':'Druck fällt mit dem Widerstand des Pucks. Fluss-Limit verhindert ein Durchschießen am Ende.'});
+  }
+  }
+  ph.forEach((p,i)=>p.i=i+1);
+  const total=ph.reduce((s,p)=>s+p.dur,0);
+
+  const grind={
+    bloom:`Fein mahlen. In der Extraktion sollte der Druck bei ${f1(exFlow)} ml/s auf 6–9 bar steigen. Bleibt er unter 5 bar: feiner. Stößt er an 9 bar und der Fluss sinkt: gröber.`,
+    adaptive:`So einstellen, dass am Peak der Fluss bei 1,5–2,5 ml/s liegt und das Fluss-Limit nicht greift. Fällt der Druck nicht von selbst unter ${f1(peak)} bar, passt es.`,
+    lever:`Etwas gröber als für 9 bar. Am Peak sollte der Fluss um 1,2–2 ml/s liegen und zum Ende hin langsam steigen.`,
+    classic:`Klassischer Espresso-Mahlgrad. Bei 9 bar sollten 1,5–2,2 ml/s fließen.`,
+    zer0:`So einstellen, dass der Shot je nach Röstung 30–40 s dauert (dunkel eher kürzer). In der Extraktion sollte der Druck bei ${f1(exFlow)} ml/s unter 9 bar bleiben. Hängt er am Limit und der Fluss sinkt: gröber. Bleibt er unter 4 bar: feiner.`,
+    turbo:`Deutlich gröber als normal. Der Druck soll die ${f1(peak)} bar halten und der Fluss bei 3–4,5 ml/s liegen.`
+  }[style];
+  why.push({k:'Mahlgrad',t:grind+' Mit Preinfusion und Soak mahlst du feiner als an der Standard-Gaggia. Richte dich nach den Zielwerten im Diagramm, nicht nach 25–30 Sekunden.'});
+
+  return {style,isFlow,temp,dose,ratio,yieldG,peak,pEnd,exFlow,piFlow,piStop,soak,rampT,phases:ph,total,why,age,grind,rob};
+}
+
+/* ---------- Diagramm ---------- */
+const EASE={Linear:t=>t,'Ease-In':t=>t*t,'Ease-Out':t=>1-(1-t)*(1-t),'Ease-In-Out':t=>t<.5?2*t*t:1-Math.pow(-2*t+2,2)/2,Instant:()=>1};
+function chartSVG(p){
+  const W=680,H=258,L=40,Rr=14,Tp=40,B=30,iw=W-L-Rr,ih=H-Tp-B,maxY=10;
+  const tot=Math.max(10,p.total), x=t=>L+t/tot*iw, y=v=>Tp+ih-v/maxY*ih;
+  let g='', t0=0, prev=null;
+  for(let v=0;v<=maxY;v+=2) g+=`<line x1="${L}" x2="${W-Rr}" y1="${y(v)}" y2="${y(v)}" stroke="var(--line)" stroke-width="1"/><text x="${L-8}" y="${y(v)+4}" text-anchor="end" font-size="11" fill="var(--muted)" font-family="IBM Plex Mono,monospace">${v}</text>`;
+  const step=tot>45?10:5;
+  for(let s=0;s<=tot+0.01;s+=step) g+=`<text x="${x(s)}" y="${H-10}" text-anchor="middle" font-size="11" fill="var(--muted)" font-family="IBM Plex Mono,monospace">${s}s</text>`;
+  let lines='';
+  p.phases.forEach((ph,idx)=>{
+    const t1=t0+ph.dur, col=ph.type==='flow'?'var(--flow)':'var(--press)', limCol=ph.type==='flow'?'var(--press)':'var(--flow)';
+    if(idx%2===1) g+=`<rect x="${x(t0)}" y="${Tp}" width="${x(t1)-x(t0)}" height="${ih}" fill="var(--sunk)" opacity=".55"/>`;
+    g+=`<line x1="${x(t0)}" x2="${x(t0)}" y1="${Tp-4}" y2="${Tp+ih}" stroke="var(--line)"/>`;
+    const lbl=ph.dur/tot*iw>46?ph.n:ph.i+'';
+    g+=`<text x="${(x(t0)+x(t1))/2}" y="${Tp-9}" text-anchor="middle" font-size="12" fill="var(--ink)" font-family="Barlow Condensed,Arial Narrow,sans-serif" font-weight="600">${esc(lbl)}</text>`;
+    const span=ph.ramp!==undefined?Math.max(0.1,ph.ramp):(ph.n==='Anstieg')?ph.dur:Math.max(ph.time,ph.dur);
+    const start=ph.adaptive&&prev!==null&&prev.type===ph.type?prev.last:ph.s;
+    const pts=[];
+    for(let k=0;k<=24;k++){const tt=ph.dur*k/24;const f=ph.curve==='Instant'?1:EASE[ph.curve](Math.min(1,tt/span));const v=ph.curve==='Instant'?ph.e:start+(ph.e-start)*f;pts.push([x(t0+tt),y(Math.min(maxY,v))]);}
+    if(prev&&prev.type===ph.type) pts.unshift([x(t0),y(prev.last)]);
+    lines+=`<polyline points="${pts.map(q=>q.map(n=>n.toFixed(1)).join(',')).join(' ')}" fill="none" stroke="${col}" stroke-width="2.6" stroke-linejoin="round"/>`;
+    if(ph.lim!==null) lines+=`<line x1="${x(t0)}" x2="${x(t1)}" y1="${y(Math.min(maxY,ph.lim))}" y2="${y(Math.min(maxY,ph.lim))}" stroke="${limCol}" stroke-width="1.5" stroke-dasharray="5 4" opacity=".85"/>`;
+    const last=ph.curve==='Instant'?ph.e:start+(ph.e-start)*EASE[ph.curve](Math.min(1,ph.dur/span));
+    prev={type:ph.type,last};
+    t0=t1;
+  });
+  g+=`<line x1="${x(t0)}" x2="${x(t0)}" y1="${Tp-4}" y2="${Tp+ih}" stroke="var(--ink)" stroke-dasharray="2 3"/>`;
+  g+=`<text x="${x(t0)-4}" y="${Tp+12}" text-anchor="end" font-size="11" fill="var(--ink)" font-family="IBM Plex Mono,monospace">Stopp ${p.yieldG} g</text>`;
+  g+=`<text x="4" y="12" font-size="11" fill="var(--muted)" font-family="IBM Plex Sans,sans-serif">bar · ml/s</text>`;
+  return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Profilverlauf: Druck- und Flussziele über die Zeit">${g}${lines}</svg>`;
+}
+
+/* ---------- Empfehlung & Anleitung ---------- */
+function beanDesc(p,b){
+  const r=clamp(+b.roast||3,1,5), parts=[`${ROAST[r-1].n.toLowerCase()} geröstet`];
+  if(b.process&&b.process!=='washed') parts.push((PROC[b.process]||PROC.washed).n);
+  parts.push(p.rob>0?`${100-p.rob}/${p.rob} Arabica/Robusta`:'100 % Arabica');
+  if(b.decaf==='1') parts.push('entkoffeiniert');
+  if(b.drink==='milch') parts.push('für Milchgetränke');
+  return parts.join(', ');
+}
+function headline(p,b){
+  const main=p.isFlow?`${f1(p.exFlow)} ml/s Fluss`:p.pEnd!==p.peak?`Peak ${f1(p.peak)} bar, fallend auf ${f1(p.pEnd)} bar`:`${f1(p.peak)} bar konstant`;
+  return `Für <b>${esc(b.name||'deine Bohne')}</b> (${esc(beanDesc(p,b))}) empfehle ich das Profil <b>${STYLES[p.style].n}</b>: <b>${f1(p.temp)} °C</b>, <b>${f1(p.dose)} g → ${p.yieldG} g</b> (1:${f1(p.ratio)}), ${main}.`;
+}
+function setupSteps(p,b){
+  const S=[], name=`${(b.name||'Bohne').slice(0,20)} ${STYLES[p.style].n}`;
+  S.push(`Öffne die Web-UI unter <code>gaggiuino.local</code> oder das Display. Geh zu <b>Profiles</b> und tippe auf <b>New</b>. Als Name passt z. B. <code>${esc(name)}</code>.`);
+  S.push(`Öffne <b>Global profile settings</b> und setze <b>Water temp</b> auf <code>${f1(p.temp)} °C</code>. Bei <b>Stop on</b> wählst du <b>Weight</b> mit <code>${p.yieldG} g</code>. Ohne Waage geht auch die Predictive Scale.`);
+  p.phases.forEach(ph=>{
+    const u=ph.type==='flow'?'ml/s':'bar', lu=ph.type==='flow'?'bar':'ml/s';
+    const tgt=ph.s===ph.e?`${f1(ph.e)} ${u}`:`${f1(ph.s)} → ${f1(ph.e)} ${u}`;
+    const bits=[`<b>Phase characteristic</b> <code>${ph.type==='flow'?'Flow':'Pressure'}</code>`,`<b>Target</b> <code>${tgt}</code>`,
+      `<b>Adaptive</b> <code>${ph.adaptive?'an':'aus'}</code>`,`<b>Limit</b> <code>${ph.lim===null?'leer lassen':f1(ph.lim)+' '+lu}</code>`,
+      `<b>Time</b> <code>${ph.time} s</code>`,`<b>Curve</b> <code>${ph.curve}</code>`];
+    if(ph.stop.length) bits.push(`<b>Stop condition</b> <code>${esc(ph.stop.join(', '))}</code>`);
+    S.push(`<b>Phase ${ph.i} – ${esc(ph.n)}</b> (${ph.i===1?'die erste Phase bearbeiten':'mit <b>Add phase</b> anlegen'}): ${bits.join(' · ')}.`);
+  });
+  S.push(`Tippe auf <b>Save changes</b> und wähl das Profil aus. Wenn du danach auf dem Home-Screen <b>Save</b> drückst, startet die Maschine künftig mit diesem Profil.`);
+  S.push(`Gib <code>${f1(p.dose)} g</code> ins Sieb, lockere das Mehl mit WDT auf und tampe gerade. Dann den Shot starten. Die Waage tariert automatisch.`);
+  S.push(`<b>Mahlgrad prüfen:</b> ${esc(p.grind)}`);
+  S.push(`Probier den Shot. Wenn er nicht passt, wähl unten bei <b>Dial-in</b> aus, wie er geschmeckt hat (zu sauer, zu bitter usw.). Dort bekommst du die nächste Änderung.`);
+  return S;
+}
+
+/* ---------- Dial-in ---------- */
+const SYM=[
+  {k:'sauer',n:'Sauer, spitz, salzig'},
+  {k:'bitter',n:'Bitter, verbrannt'},
+  {k:'duenn',n:'Wässrig, wenig Körper'},
+  {k:'pelzig',n:'Pelzig, trocken im Mund'},
+  {k:'flach',n:'Flach, wenig Süße'},
+  {k:'schnell',n:'Läuft zu schnell'},
+  {k:'langsam',n:'Läuft zu langsam / würgt'},
+  {k:'channel',n:'Druckeinbruch, Spritzer'}
+];
+function suggestions(sym,p){
+  const S=[], fl=p.isFlow, tUp=Math.min(97,p.temp+1), tDn=Math.max(86,p.temp-1);
+  const G=(t)=>S.push({t,apply:null});
+  const A=(t,apply)=>S.push({t,apply});
+  const yieldAt=d=>Math.round(p.dose*clamp(r1(p.ratio+d),1.3,3.5));
+  switch(sym){
+    case 'sauer': G('Ein bis zwei Stufen feiner mahlen. Das ist bei saurem Geschmack fast immer der erste Schritt.');
+      A(`Temperatur ${f1(p.temp)} → ${f1(tUp)} °C`,{temp:1});
+      A(`Mehr Wasser: ${p.yieldG} → ${yieldAt(0.2)} g (1:${f1(r1(p.ratio+0.2))})`,{ratio:0.2});
+      if(p.soak>0) A(`${p.style==='bloom'?'Bloom':'Soak'} ${p.soak} → ${p.soak+3} s, damit der Puck ganz gesättigt ist`,{soak:3});
+      break;
+    case 'bitter': G('Eine Stufe gröber mahlen.');
+      A(`Temperatur ${f1(p.temp)} → ${f1(tDn)} °C`,{temp:-1});
+      A(`Weniger Wasser: ${p.yieldG} → ${yieldAt(-0.2)} g (1:${f1(r1(p.ratio-0.2))})`,{ratio:-0.2});
+      if(fl) A(`Extraktionsfluss ${f1(p.exFlow)} → ${f1(p.exFlow-0.2)} ml/s`,{flow:-0.2});
+      else A(`Druck-Peak ${f1(p.peak)} → ${f1(p.peak-0.5)} bar`,{peak:-0.5});
+      break;
+    case 'duenn': G('Feiner mahlen oder 0,5–1 g mehr Dosis, falls der Korb es zulässt.');
+      A(`Weniger Wasser: ${p.yieldG} → ${yieldAt(-0.2)} g`,{ratio:-0.2});
+      if(fl) G('Für mehr Körper den Stil „Adaptiv“ probieren.');
+      else A(`Druck-Peak ${f1(p.peak)} → ${f1(Math.min(9.5,p.peak+0.5))} bar`,{peak:0.5});
+      break;
+    case 'pelzig': G('Meist ungleichmäßige Extraktion: WDT (Klumpen mit Nadel lösen) und gerade tampen.');
+      A(`Preinfusion sanfter: ${f1(p.piFlow)} → ${f1(Math.max(1.5,p.piFlow-0.5))} ml/s`,{piFlow:-0.5});
+      if(p.soak>0||!['classic','turbo'].includes(p.style)) A(`${p.style==='bloom'?'Bloom':'Soak'} ${p.soak} → ${p.soak+2} s`,{soak:2});
+      if(!fl) A(`Druck-Peak ${f1(p.peak)} → ${f1(p.peak-0.5)} bar`,{peak:-0.5});
+      break;
+    case 'flach':
+      A(`Temperatur ${f1(p.temp)} → ${f1(tUp)} °C`,{temp:1});
+      A(`Mehr Wasser: ${p.yieldG} → ${yieldAt(0.2)} g`,{ratio:0.2});
+      G(p.style==='bloom'?'Alternativ den Stil „Turbo“ probieren, der bringt oft mehr Saftigkeit.':'Alternativ den Stil „Blooming“ probieren, falls die Röstung eher hell ist.');
+      break;
+    case 'schnell': G(fl?`Feiner mahlen, bis in der Extraktion bei ${f1(p.exFlow)} ml/s mindestens 6 bar anliegen.`:`Feiner mahlen. Erreicht der Druck die ${f1(p.peak)} bar nicht oder greift das Fluss-Limit, ist das Mehl zu grob.`);
+      G('Dosis prüfen (Waage) und gleichmäßig verteilen.');
+      if(p.age!==null&&p.age>30) G('Ältere Bohnen laufen schneller. Feiner mahlen ist hier normal.');
+      break;
+    case 'langsam': G(fl?`Gröber mahlen. Bleibt der Fluss unter ${f1(p.exFlow)} ml/s, weil der Druck am 9-bar-Limit hängt, ist das Mehl zu fein.`:'Gröber mahlen, bis am Peak 1,5–2 ml/s fließen.');
+      if(p.age!==null&&p.age<7) G('Sehr frische Bohnen bremsen durch CO₂. Ein paar Tage Ruhe helfen.');
+      break;
+    case 'channel': G('WDT verwenden, Puck gerade tampen, Shower-Screen sauber halten.');
+      A(`Preinfusion sanfter: ${f1(p.piFlow)} → ${f1(Math.max(1.5,p.piFlow-0.5))} ml/s`,{piFlow:-0.5});
+      A(`Anstieg langsamer: ${p.rampT} → ${p.rampT+2} s`,{ramp:2});
+      if(!fl) A(`Druck-Peak ${f1(p.peak)} → ${f1(p.peak-0.5)} bar`,{peak:-0.5});
+      break;
+  }
+  return S;
+}
+const ADJ_LABEL={temp:['Temperatur','°C'],ratio:['Verhältnis',''],peak:['Druck-Peak','bar'],flow:['Fluss','ml/s'],piFlow:['Preinfusion','ml/s'],soak:['Soak/Bloom','s'],ramp:['Anstieg','s']};
+
+/* ---------- Speicher ---------- */
+let beans=[], mode='local', col=null, current=null, activeSym=null, applied=new Set(), dbReady=false;
+const timers={}, inflight={}, dirty={};
+function setStatus(t){$('#status').textContent=t;}
+function loadLocal(){try{return JSON.parse(localStorage.getItem('gp.beans')||'[]')||[];}catch(e){return [];}}
+function saveLocal(){try{localStorage.setItem('gp.beans',JSON.stringify(beans));}catch(e){}}
+function newId(){return 'b'+Date.now().toString(36)+Math.random().toString(36).slice(2,7);}
+function plain(b){const o={...b};delete o.isNew;delete o.isExample;return JSON.parse(JSON.stringify(o));}
+async function persist(b){
+  if(mode==='db'&&col){
+    try{await col.doc(b.id).set(plain(b));setStatus('Gespeichert · synchron in deinem Konto');}
+    catch(e){setStatus(e&&e.code==='quota_exceeded'?'Speicher voll: lösche alte Bohnen.':'Speichern fehlgeschlagen, bitte nochmal ändern.');}
+  } else {saveLocal();setStatus('Gespeichert · nur in diesem Browser');}
+}
+function schedule(b){if(b.isNew)return;clearTimeout(timers[b.id]);timers[b.id]=setTimeout(()=>{delete timers[b.id];flush(b.id);},700);}
+async function flush(id){
+  if(inflight[id]){dirty[id]=true;return;}
+  const b=beans.find(x=>x.id===id);if(!b)return;
+  inflight[id]=true;await persist(b);inflight[id]=false;
+  if(dirty[id]){dirty[id]=false;flush(id);}
+}
+async function removeBean(id){
+  beans=beans.filter(b=>b.id!==id);
+  if(mode==='db'&&col){try{await col.doc(id).delete();}catch(e){setStatus('Löschen fehlgeschlagen.');}}else saveLocal();
+}
+async function initDb(){
+  try{
+    const c=window.claude; if(!c||!c.use) {setStatus('Gespeichert · nur in diesem Browser');return;}
+    const [db,user]=await Promise.all([c.use('db'),c.use('user')]);
+    if(!db||!user){setStatus('Gespeichert · nur in diesem Browser');return;}
+    const uid=await user.id(); if(!uid){setStatus('Gespeichert · nur in diesem Browser');return;}
+    col=db.doc('data/users/'+uid+'/profile').collection('beans');
+    col.onSnapshot(async snap=>{
+      const first=!dbReady; dbReady=true; mode='db';
+      if(first&&snap.empty){const local=loadLocal().filter(b=>b&&b.id);for(const b of local){try{await col.doc(b.id).set(plain(b));}catch(e){}}if(local.length)return;}
+      const remote=snap.docs.map(d=>({...d.data(),id:d.id}));
+      beans=remote.map(r=>{const loc=beans.find(b=>b.id===r.id);return loc&&(timers[r.id]||inflight[r.id])?loc:r;});
+      beans.sort((a,b)=>(b.updated||0)-(a.updated||0));
+      if(current&&!current.isNew&&!current.isExample){const c2=beans.find(b=>b.id===current.id);current=c2||null;}
+      if(!current||current.isExample) current=beans[0]||current||exampleBean();
+      if(first) setStatus('Synchron in deinem Konto');
+      renderAll();
+    },()=>{mode='local';setStatus('Gespeichert · nur in diesem Browser');});
+  }catch(e){setStatus('Gespeichert · nur in diesem Browser');}
+}
+function exampleBean(){
+  const d=new Date(Date.now()-12*864e5).toISOString().slice(0,10);
+  return {id:newId(),name:'Beispiel: Äthiopien Guji',roaster:'',roast:2,process:'natural',robusta:'0',decaf:'0',roastDate:d,drink:'pur',goal:'clarity',dose:18,style:'auto',grind:'',adj:{},log:[],isNew:true,isExample:true};
+}
+function blankBean(){return {id:newId(),name:'',roaster:'',roast:3,process:'washed',robusta:'0',decaf:'0',roastDate:'',drink:'pur',goal:'balance',dose:18,style:'auto',grind:'',adj:{},log:[],isNew:true};}
+
+/* ---------- Rendering ---------- */
+function renderList(){
+  const el=$('#beanList');
+  if(!beans.length){el.innerHTML='<p class="empty">Noch keine Bohnen. Rechts siehst du ein Beispiel. Speichere es oder lege mit „Neue Bohne“ deine erste an.</p>';return;}
+  el.innerHTML=beans.map(b=>{const age=ageDays(b.roastDate);const r=clamp(+b.roast||3,1,5);
+    return `<button type="button" class="bean" data-id="${esc(b.id)}" aria-current="${current&&current.id===b.id}"><span class="dot" style="background:${ROAST[r-1].c}"></span><span><b>${esc(b.name||'Ohne Namen')}</b><small>${ROAST[r-1].n} · ${(PROC[b.process]||PROC.washed).n}${robPct(b)>0?` · ${robPct(b)} % Robusta`:''}${age!==null?` · ${age} T.`:''}${b.decaf==='1'?' · Decaf':''}</small></span></button>`;}).join('');
+}
+function renderForm(){
+  const b=current, f=$('#beanForm');
+  $('#roastSeg').innerHTML=ROAST.map((r,i)=>`<label><input type="radio" name="roast" value="${i+1}" id="roast${i+1}"><span><i class="sw" style="background:${r.c}"></i>${r.n}</span></label>`).join('');
+  f.name.value=b.name||''; f.roaster.value=b.roaster||''; f.process.value=b.process||'washed'; f.robusta.value=robPct(b)||'';
+  f.roastDate.value=b.roastDate||''; f.dose.value=b.dose||18; f.decaf.value=String(b.decaf||'0'); f.grind.value=b.grind||'';
+  f.querySelector(`[name=roast][value="${b.roast||3}"]`).checked=true;
+  f.querySelector(`[name=drink][value="${b.drink||'pur'}"]`).checked=true;
+  f.querySelector(`[name=goal][value="${b.goal||'balance'}"]`).checked=true;
+  renderStyleSelect();
+  $('#exampleBanner').hidden=!b.isExample;
+  const act=$('#beanActions');
+  act.innerHTML=b.isNew?`<button class="btn primary small" type="button" id="saveBean">Bohne speichern</button>`
+    :`<button class="btn small danger" type="button" id="delBean">Löschen</button>`;
+}
+function renderStyleSelect(){
+  const b=current, auto=autoStyle(b), sel=$('#fStyle');
+  sel.innerHTML=`<option value="auto">Automatisch (${STYLES[auto].n})</option>`+Object.entries(STYLES).map(([k,v])=>`<option value="${k}">${v.n}</option>`).join('');
+  sel.value=b.style&&STYLES[b.style]?b.style:'auto';
+}
+function readForm(){
+  const f=$('#beanForm'), b=current;
+  b.name=f.name.value.trim(); b.roaster=f.roaster.value.trim(); b.process=f.process.value; b.robusta=clamp(Math.round(+f.robusta.value||0),0,100);
+  b.roastDate=f.roastDate.value; b.dose=parseFloat(f.dose.value)||18; b.decaf=f.decaf.value; b.grind=f.grind.value;
+  b.roast=+(f.querySelector('[name=roast]:checked')||{value:3}).value;
+  b.drink=(f.querySelector('[name=drink]:checked')||{value:'pur'}).value;
+  b.goal=(f.querySelector('[name=goal]:checked')||{value:'balance'}).value;
+  b.style=f.style.value; b.updated=Date.now();
+}
+let lastProfile=null;
+function renderOutput(){
+  const b=current, p=buildProfile(b); lastProfile=p;
+  $('#gauges').innerHTML=[
+    ['Water temp',`${f1(p.temp)}<small>°C</small>`,'Zieltemperatur am Puck'],
+    ['Dosis → Tasse',`${f1(p.dose)}<small>g</small> → ${p.yieldG}<small>g</small>`,`Verhältnis 1:${f1(p.ratio)}`],
+    [p.isFlow?'Extraktionsfluss':'Druck-Peak',p.isFlow?`${f1(p.exFlow)}<small>ml/s</small>`:`${f1(p.peak)}<small>bar</small>`,p.isFlow?'Limit 9 bar':(p.pEnd!==p.peak?`fällt auf ${f1(p.pEnd)} bar`:'konstant')],
+    ['Shotdauer','≈ '+Math.round(p.total)+'<small>s</small>','Orientierung, kein Ziel']
+  ].map(g=>`<div class="g"><span class="label">${g[0]}</span><span class="v">${g[1]}</span><span class="u">${g[2]}</span></div>`).join('');
+  const opts=styleOptions(+b.roast), auto=autoStyle(b); if(!opts.includes(auto)) opts.unshift(auto);
+  if(b.style&&b.style!=='auto'&&!opts.includes(b.style)) opts.push(b.style);
+  $('#styleChips').innerHTML=opts.map(k=>`<button type="button" class="chip" data-style="${k}" aria-pressed="${p.style===k}">${STYLES[k].n}${k===auto?'<em>empfohlen</em>':''}</button>`).join('');
+  $('#styleLead').textContent=STYLES[p.style].s;
+  $('#chart').innerHTML=chartSVG(p);
+  $('#globalSet').innerHTML=`<span><b>Water temp</b>${f1(p.temp)} °C</span><span><b>Stop on</b>Weight ${p.yieldG} g</span><span><b>Dose</b>${f1(p.dose)} g</span><span><b>Phasen</b>${p.phases.length}</span>`;
+  $('#phases').innerHTML=p.phases.map(ph=>{
+    const u=ph.type==='flow'?'ml/s':'bar', lu=ph.type==='flow'?'bar':'ml/s';
+    const tgt=ph.s===ph.e?`${f1(ph.e)} ${u}`:`${f1(ph.s)} → ${f1(ph.e)} ${u}`;
+    return `<article class="ph"><header><span><span class="n">${ph.i}</span> <h3 style="display:inline">${esc(ph.n)}</h3></span><span class="type ${ph.type}">${ph.type==='flow'?'Flow':'Pressure'}</span></header>
+    <dl><dt>Target</dt><dd>${tgt}</dd><dt>Limit</dt><dd>${ph.lim===null?'–':f1(ph.lim)+' '+lu}</dd><dt>Adaptive</dt><dd>${ph.adaptive?'an':'aus'}</dd><dt>Curve</dt><dd>${ph.curve}</dd><dt>Time</dt><dd>${ph.time} s</dd><dt>Stop</dt><dd>${ph.stop.length?esc(ph.stop.join(', ')):'–'}</dd></dl>
+    <p>${esc(ph.hint)}</p></article>`;}).join('');
+  $('#headline').innerHTML=headline(p,b);
+  $('#steps').innerHTML=setupSteps(p,b).map(s=>`<li><span>${s}</span></li>`).join('');
+  $('#why').innerHTML=p.why.map(w=>`<li><b>${w.k}</b><span>${w.t}</span></li>`).join('');
+  renderDial();
+}
+function renderDial(){
+  const b=current, p=lastProfile;
+  $('#symptoms').innerHTML=SYM.map(s=>`<button type="button" class="chip" data-sym="${s.k}" aria-pressed="${activeSym===s.k}">${s.n}</button>`).join('');
+  const sugs=activeSym?suggestions(activeSym,p):[];
+  $('#sugs').innerHTML=sugs.map((s,i)=>{const key=activeSym+':'+i;
+    const right=s.apply?(applied.has(key)?'<span class="done">Übernommen</span>':`<button class="btn small" type="button" data-apply="${i}">Übernehmen</button>`):'';
+    return `<li><span class="k">${i+1}</span><span>${esc(s.t)}</span>${right}</li>`;}).join('');
+  const a=b.adj||{}, keys=Object.keys(a).filter(k=>a[k]);
+  $('#adjBox').innerHTML=keys.length?`<div class="label" style="margin-bottom:6px">Deine Korrekturen für diese Bohne</div><div class="adj">${keys.map(k=>`<span>${ADJ_LABEL[k][0]} ${a[k]>0?'+':'−'}${f1(Math.abs(a[k]))} ${ADJ_LABEL[k][1]}</span>`).join('')}<button class="btn small" type="button" id="resetAdj">Zurücksetzen</button></div>`:'';
+  renderLog();
+}
+function fmtTime(t){const d=new Date(t);return d.toLocaleDateString('de-DE',{day:'2-digit',month:'2-digit',year:'2-digit'})+' '+d.toLocaleTimeString('de-DE',{hour:'2-digit',minute:'2-digit'});}
+function snapshot(p,b){
+  return {bean:b.name||'Ohne Namen',roast:clamp(+b.roast||3,1,5),rob:p.rob,process:b.process||'washed',decaf:b.decaf==='1',milk:b.drink==='milch',
+    style:p.style,temp:p.temp,dose:p.dose,yieldG:p.yieldG,ratio:p.ratio,isFlow:p.isFlow,
+    peak:p.isFlow?null:p.peak,pEnd:p.isFlow?null:p.pEnd,exFlow:p.isFlow?p.exFlow:null,
+    soak:p.soak,piFlow:p.piFlow,rampT:p.rampT,grind:b.grind||''};
+}
+// Werte, die im Tagebuch gezeigt und verglichen werden
+const SNAP_FIELDS=[
+  ['temp','Temperatur',v=>f1(v)+' °C'],['yieldG','Tasse',v=>v+' g'],['ratio','Verhältnis',v=>'1:'+f1(v)],
+  ['peak','Druck-Peak',v=>f1(v)+' bar',s=>!s.isFlow],['pEnd','Druck-Ende',v=>f1(v)+' bar',s=>!s.isFlow&&s.pEnd!==s.peak],
+  ['exFlow','Fluss',v=>f1(v)+' ml/s',s=>s.isFlow],['soak','Soak',v=>v+' s'],['piFlow','Preinfusion',v=>f1(v)+' ml/s'],['rampT','Anstieg',v=>v+' s']];
+function snapVals(s){
+  const has=v=>v!==null&&v!==undefined&&v!=='', out=[];
+  if(has(s.temp)) out.push(`${f1(s.temp)} °C`);
+  if(has(s.dose)||has(s.yieldG)) out.push(`${has(s.dose)?f1(s.dose):'?'} → ${has(s.yieldG)?f1(s.yieldG):'?'} g${has(s.ratio)?` (1:${f1(s.ratio)})`:''}`);
+  if(has(s.peak)&&(!s.isFlow||!has(s.exFlow))) out.push(has(s.pEnd)&&s.pEnd!==s.peak?`Druck ${f1(s.peak)} → ${f1(s.pEnd)} bar`:`Druck ${f1(s.peak)} bar`);
+  if(has(s.exFlow)&&(s.isFlow||!has(s.peak))) out.push(`Fluss ${f1(s.exFlow)} ml/s`);
+  if(s.soak>0) out.push(`Soak ${s.soak} s`);
+  if(has(s.piFlow)) out.push(`Preinfusion ${f1(s.piFlow)} ml/s`);
+  if(s.rampT) out.push(`Anstieg ${s.rampT} s`);
+  if(s.grind) out.push(`Mahlgrad ${s.grind}`);
+  if(s.shotTime) out.push(`Shotzeit ${s.shotTime} s`);
+  if(s.realOut) out.push(`Tatsächlich ${s.realOut} g`);
+  if(s.extra) out.push(s.extra);
+  return out;
+}
+function snapDiff(a,b){
+  return SNAP_FIELDS.filter(([k,,,show])=>a[k]!==b[k]&&(!show||show(a)||show(b))).map(([k,l,f])=>`${l} ${f(a[k])} → ${f(b[k])}`);
+}
+let logScope='bean', logLimit=10, editKey=null, delKey=null;
+function renderLog(){
+  let items;
+  if(logScope==='all'){
+    const all=beans.slice(); if(current&&current.isNew) all.push(current);
+    items=all.flatMap(b=>(b.log||[]).map(l=>({...l,_bean:b.name||'Ohne Namen',_bid:b.id})));
+  } else items=(current.log||[]).map(l=>({...l,_bean:current.name||'Ohne Namen',_bid:current.id}));
+  items.sort((x,y)=>y.t-x.t);
+  const shown=items.slice(0,logLimit);
+  $('#moreLog').hidden=items.length<=logLimit;
+  $('#log').innerHTML=shown.length?shown.map(l=>entryHTML(l,logScope==='all')).join(''):`<li class="plain muted" style="border:0">Noch keine Einträge${logScope==='bean'?' für diese Bohne':''}. Übernommene Korrekturen und gute Shots landen hier, jeweils mit Bohne, Profil und allen Einstellungen.</li>`;
+}
+function entryActions(key){
+  if(delKey===key) return `<div class="row"><span class="bm">Eintrag wirklich löschen?</span><button class="btn small danger" type="button" data-act="delyes">Ja, löschen</button><button class="btn small" type="button" data-act="cancel">Abbrechen</button></div>`;
+  return `<div class="row"><button class="btn small" type="button" data-act="edit">Bearbeiten</button><button class="btn small" type="button" data-act="del">Löschen</button></div>`;
+}
+const isFlowStyle=k=>k==='bloom'||k==='zer0';
+function editHTML(l,key){
+  const s=l.snap||{bean:l._bean,roast:3,style:'adaptive',temp:'',dose:'',yieldG:'',peak:'',pEnd:'',exFlow:'',soak:'',piFlow:'',rampT:'',grind:''};
+  const num=(id,label,v,step,unit)=>`<div class="f"><label class="label" for="ed-${id}">${label}${unit?` (${unit})`:''}</label><input type="number" id="ed-${id}" step="${step}" value="${v===undefined||v===null?'':v}"></div>`;
+  const txt=(id,label,v,ph)=>`<div class="f"><label class="label" for="ed-${id}">${label}</label><input type="text" id="ed-${id}" value="${esc(v||'')}" placeholder="${ph||''}"></div>`;
+  return `<li class="entry editing" data-key="${esc(key)}"><div class="eh"><span class="bn">${esc(s.bean||l._bean)} <span>· Eintrag bearbeiten</span></span><time>${fmtTime(l.t)}</time></div>
+    <p class="bm">Trag ein, was du wirklich an der Maschine eingestellt hast. Leere Felder werden nicht angezeigt.</p>
+    <div class="edgrid">
+      <div class="f"><label class="label" for="ed-rating">Bewertung</label><select id="ed-rating"><option value="">–</option>${[5,4,3,2,1].map(n=>`<option value="${n}"${l.rating===n?' selected':''}>${'★'.repeat(n)}${'☆'.repeat(5-n)}</option>`).join('')}</select></div>
+      <div class="f"><label class="label" for="ed-style">Profil</label><select id="ed-style">${Object.entries(STYLES).map(([k,v])=>`<option value="${k}"${k===s.style?' selected':''}>${v.n}</option>`).join('')}<option value="other"${s.style==='other'?' selected':''}>Anderes Profil</option></select></div>
+      ${txt('styleName','Profilname am Gaggiuino',s.styleName,'z. B. Zer0 v2')}
+      ${num('temp','Temperatur',s.temp,0.5,'°C')}
+      ${num('dose','Dosis',s.dose,0.1,'g')}
+      ${num('yieldG','Ziel Tasse',s.yieldG,1,'g')}
+      ${num('realOut','Tatsächlich in der Tasse',s.realOut,0.1,'g')}
+      ${num('shotTime','Shotzeit',s.shotTime,1,'s')}
+      ${num('piFlow','Preinfusion',s.piFlow,0.1,'ml/s')}
+      ${num('soak','Soak / Bloom',s.soak,1,'s')}
+      ${num('rampT','Anstieg',s.rampT,1,'s')}
+      ${num('peak','Druck-Peak',s.peak,0.1,'bar')}
+      ${num('pEnd','Druck-Ende',s.pEnd,0.1,'bar')}
+      ${num('exFlow','Extraktionsfluss',s.exFlow,0.1,'ml/s')}
+      ${txt('grind','Mahlgrad',s.grind,'z. B. Niche 14')}
+    </div>
+    ${txt('extra','Weitere Einstellungen',s.extra,'z. B. Brew Delta aus, Korb 18 g IMS, Puck-Screen, Wasser 80 ppm')}
+    ${txt('note','Notiz',l.note,'Geschmack, Crema, Auffälligkeiten')}
+    <div class="row"><button class="btn primary small" type="button" data-act="save">Speichern</button><button class="btn small" type="button" data-act="cancel">Abbrechen</button></div></li>`;
+}
+function starsHTML(v){if(!v)return '';const n=Math.round(v);return `<span class="stars" aria-label="${f1(v)} von 5 Sternen">${'★'.repeat(n)}<span class="off">${'★'.repeat(5-n)}</span></span>`;}
+function entryHTML(l,showBean){
+  const key=l._bid+':'+l.t;
+  if(editKey===key) return editHTML(l,key);
+  if(!l.snap) return `<li class="plain" data-key="${esc(key)}"><time>${fmtTime(l.t)}</time>${l.rating?starsHTML(l.rating)+' ':''}${showBean?`<b>${esc(l._bean)}</b> · `:''}${esc(l.txt||'')}${l.note?` · Notiz: ${esc(l.note)}`:''}${entryActions(key)}</li>`;
+  const s={...l.snap,isFlow:l.snap.style==='other'?!!l.snap.exFlow&&!l.snap.peak:l.snap.isFlow}, badge={adjust:['adjust','Korrektur'],good:['good','Lecker'],reset:['reset','Zurückgesetzt']}[l.kind]||['reset','Eintrag'];
+  const meta=[ROAST[s.roast-1].n+' geröstet',(PROC[s.process]||PROC.washed).n,s.rob>0?`${100-s.rob}/${s.rob} Arabica/Robusta`:'100 % Arabica'];
+  if(s.decaf) meta.push('entkoffeiniert'); if(s.milk) meta.push('mit Milch');
+  let body='';
+  if(l.kind==='adjust'){
+    body+=`<p><b>Geschmack:</b> ${esc(l.sym)}</p><p><b>Übernommen:</b> ${esc(l.change)}</p>`;
+    const d=l.after?snapDiff(s,l.after):[];
+    if(d.length) body+=`<div><div class="bm" style="margin-bottom:3px">Neues Profil danach:</div><div class="diff">${d.map(x=>`<span>${esc(x)}</span>`).join('')}</div></div>`;
+  }
+  if(l.note) body+=`<p><b>Notiz:</b> ${esc(l.note)}</p>`;
+  body+=entryActions(key);
+  const prof=s.style==='other'?(s.styleName||'Anderes Profil'):(STYLES[s.style]||{n:s.style}).n+(s.styleName?` („${s.styleName}“)`:'');
+  return `<li class="entry" data-key="${esc(key)}"><div class="eh"><span class="row" style="gap:8px"><span class="badge ${badge[0]}">${badge[1]}</span>${starsHTML(l.rating)}</span><time>${fmtTime(l.t)}${l.edited?' · bearbeitet':''}</time></div>
+    <div class="bn">${esc(s.bean)} <span>· Profil ${esc(prof)}</span></div>
+    <div class="bm">${esc(meta.join(' · '))}</div>
+    <div><div class="bm" style="margin-bottom:3px">${l.kind==='reset'?'Profil nach dem Zurücksetzen:':'Einstellungen beim Shot:'}</div><div class="vals">${snapVals(s).map(v=>`<span>${esc(v)}</span>`).join('')}</div></div>
+    ${body}</li>`;
+}
+function renderAll(){renderList();if(current){renderForm();renderOutput();}if(!$('#viewStats').hidden)renderStats();}
+function touch(){readForm();if(!current.isNew){const i=beans.findIndex(x=>x.id===current.id);if(i>=0)beans[i]=current;schedule(current);}renderList();renderStyleSelect();renderOutput();}
+function select(b){current=b;activeSym=null;applied=new Set();renderAll();}
+function addLog(entry){
+  const note=$('#shotNote').value.trim(); if(note){entry.note=note;$('#shotNote').value='';}
+  current.log=(current.log||[]).concat({t:Date.now(),...entry}).slice(-60);
+}
+
+/* ---------- Events ---------- */
+$('#beanForm').addEventListener('input',touch);
+$('#beanForm').addEventListener('change',touch);
+$('#beanForm').addEventListener('submit',e=>e.preventDefault());
+$('#beanList').addEventListener('click',e=>{const el=e.target.closest('[data-id]');if(!el)return;const b=beans.find(x=>x.id===el.dataset.id);if(b)select(b);});
+$('#newBean').addEventListener('click',()=>{select(blankBean());$('#fName').focus();});
+$('#beanActions').addEventListener('click',async e=>{
+  if(e.target.id==='saveBean'){readForm();if(!current.name)current.name=current.isExample?'Äthiopien Guji':'Neue Bohne';delete current.isNew;delete current.isExample;beans.unshift(current);await persist(current);renderAll();}
+  else if(e.target.id==='delBean'){e.target.outerHTML=`<span class="muted" style="font-size:13px">Wirklich löschen?</span><button class="btn small danger" type="button" id="delYes">Ja, löschen</button><button class="btn small" type="button" id="delNo">Abbrechen</button>`;}
+  else if(e.target.id==='delYes'){await removeBean(current.id);select(beans[0]||exampleBean());}
+  else if(e.target.id==='delNo'){renderForm();}
+});
+$('#styleChips').addEventListener('click',e=>{const el=e.target.closest('[data-style]');if(!el)return;$('#fStyle').value=el.dataset.style===autoStyle(current)?'auto':el.dataset.style;touch();});
+$('#symptoms').addEventListener('click',e=>{const el=e.target.closest('[data-sym]');if(!el)return;activeSym=activeSym===el.dataset.sym?null:el.dataset.sym;applied=new Set();renderDial();});
+$('#sugs').addEventListener('click',e=>{const el=e.target.closest('[data-apply]');if(!el)return;
+  const i=+el.dataset.apply, s=suggestions(activeSym,lastProfile)[i]; if(!s||!s.apply)return;
+  const before=snapshot(lastProfile,current);
+  current.adj=current.adj||{}; for(const [k,d] of Object.entries(s.apply)) current.adj[k]=r1((current.adj[k]||0)+d);
+  addLog({kind:'adjust',sym:SYM.find(x=>x.k===activeSym).n,change:s.t,snap:before,after:snapshot(buildProfile(current),current)});
+  applied.add(activeSym+':'+i);
+  current.updated=Date.now(); if(!current.isNew) schedule(current);
+  renderOutput();
+});
+$('#adjBox').addEventListener('click',e=>{if(e.target.id!=='resetAdj')return;current.adj={};addLog({kind:'reset',snap:snapshot(buildProfile(current),current)});applied=new Set();if(!current.isNew)schedule(current);renderOutput();});
+$('#goodShot').addEventListener('click',()=>{addLog({kind:'good',rating:4,snap:snapshot(lastProfile,current)});if(!current.isNew)schedule(current);
+  const last=current.log[current.log.length-1]; editKey=current.id+':'+last.t; delKey=null; logScope='bean';
+  document.querySelectorAll('[data-scope]').forEach(x=>x.setAttribute('aria-pressed',String(x.dataset.scope===logScope)));
+  renderLog(); const f=$('#ed-shotTime'); if(f) f.focus();});
+function findEntry(key){
+  const i=key.lastIndexOf(':'), bid=key.slice(0,i), t=+key.slice(i+1);
+  const bean=(current&&current.id===bid)?current:beans.find(b=>b.id===bid);
+  if(!bean) return {};
+  return {bean,idx:(bean.log||[]).findIndex(l=>l.t===t)};
+}
+// das Bearbeiten-Formular kann in der Werkstatt und im Tagebuch-Reiter stehen, deshalb Felder im angeklickten Eintrag suchen
+let edRoot=document;
+function numVal(id){const el=edRoot.querySelector('#ed-'+id);if(!el||el.value.trim()==='')return null;const v=parseFloat(el.value.replace(',','.'));return isNaN(v)?null:v;}
+function txtVal(id){const el=edRoot.querySelector('#ed-'+id);return el?el.value.trim():'';}
+function refreshLogs(){renderLog();if(!$('#viewStats').hidden)renderStats();}
+function onLogClick(e){
+  const btn=e.target.closest('[data-act]'); if(!btn) return;
+  const li=btn.closest('[data-key]'), key=li&&li.dataset.key, act=btn.dataset.act; if(!key) return;
+  edRoot=li;
+  if(act==='edit'){editKey=key;delKey=null;refreshLogs();return;}
+  if(act==='del'){delKey=key;editKey=null;refreshLogs();return;}
+  if(act==='cancel'){editKey=null;delKey=null;refreshLogs();return;}
+  const {bean,idx}=findEntry(key); if(!bean||idx<0){editKey=delKey=null;refreshLogs();return;}
+  if(act==='delyes'){bean.log=bean.log.filter((_,i)=>i!==idx);}
+  if(act==='save'){
+    const l={...bean.log[idx]}, s={...(l.snap||{bean:bean.name||'Ohne Namen',roast:clamp(+bean.roast||3,1,5),rob:robPct(bean),process:bean.process||'washed',decaf:bean.decaf==='1',milk:bean.drink==='milch'})};
+    s.style=txtVal('style'); s.styleName=txtVal('styleName');
+    for(const k of ['temp','dose','yieldG','realOut','shotTime','piFlow','soak','rampT','peak','pEnd','exFlow']) s[k]=numVal(k);
+    s.grind=txtVal('grind'); s.extra=txtVal('extra');
+    s.isFlow=s.style==='other'?(s.exFlow!==null&&s.peak===null):isFlowStyle(s.style);
+    s.ratio=s.dose&&(s.realOut||s.yieldG)?r1((s.realOut||s.yieldG)/s.dose):null;
+    l.snap=s; l.note=txtVal('note'); l.rating=numVal('rating'); l.edited=Date.now(); if(!l.kind) l.kind='good';
+    bean.log=bean.log.map((x,i)=>i===idx?l:x);
+  }
+  editKey=null; delKey=null; bean.updated=Date.now();
+  if(!bean.isNew) schedule(bean);
+  refreshLogs();
+}
+$('#log').addEventListener('click',onLogClick);
+$('#journal').addEventListener('click',onLogClick);
+document.querySelector('.logbar').addEventListener('click',e=>{const el=e.target.closest('[data-scope]');if(!el)return;logScope=el.dataset.scope;logLimit=10;
+  document.querySelectorAll('[data-scope]').forEach(x=>x.setAttribute('aria-pressed',String(x.dataset.scope===logScope)));renderLog();});
+$('#moreLog').addEventListener('click',()=>{logLimit+=10;renderLog();});
+$('#copyBtn').addEventListener('click',async()=>{
+  const p=lastProfile,b=current;
+  const lines=[`Gaggiuino-Profil: ${b.name||'Bohne'} (${STYLES[p.style].n})`,`Global: Water temp ${f1(p.temp)} °C · Stop on Weight ${p.yieldG} g · Dosis ${f1(p.dose)} g (1:${f1(p.ratio)})`];
+  p.phases.forEach(ph=>{const u=ph.type==='flow'?'ml/s':'bar',lu=ph.type==='flow'?'bar':'ml/s';
+    lines.push(`${ph.i}. ${ph.n}: ${ph.type==='flow'?'Flow':'Pressure'} ${ph.s===ph.e?f1(ph.e):f1(ph.s)+' → '+f1(ph.e)} ${u}, Limit ${ph.lim===null?'–':f1(ph.lim)+' '+lu}, Adaptive ${ph.adaptive?'an':'aus'}, Curve ${ph.curve}, Time ${ph.time} s${ph.stop.length?', Stop: '+ph.stop.join(', '):''}`);});
+  const txt=lines.join('\n'), btn=$('#copyBtn');
+  try{await navigator.clipboard.writeText(txt);btn.textContent='Kopiert';setTimeout(()=>btn.textContent='Profil als Text kopieren',1600);}
+  catch(e){const ta=$('#copyArea');ta.hidden=false;ta.value=txt;ta.focus();ta.select();btn.textContent='Text unten markiert';}
+});
+
+/* ---------- Tagebuch & Statistik ---------- */
+function allBeansWithDraft(){const all=beans.slice();if(current&&current.isNew&&(current.log||[]).length)all.push(current);return all;}
+// ein Eintrag als Shot: ohne Sterne zählt „Lecker“ als 4 und „Korrektur“ als 2
+function allEntries(){
+  return allBeansWithDraft().flatMap(b=>(b.log||[]).map(l=>{
+    const s=l.snap||{}, legacyGood=!l.kind&&/^Lecker/.test(l.txt||''), kind=l.kind||(legacyGood?'good':/zurückgesetzt/i.test(l.txt||'')?'reset':'adjust');
+    const style=s.style||null, styleLabel=style==='other'?(s.styleName||'Anderes Profil'):style?(STYLES[style]||{n:style}).n:null;
+    return {l:{...l,_bean:b.name||'Ohne Namen',_bid:b.id},t:l.t,bid:b.id,bean:b.name||'Ohne Namen',roast:clamp(+(s.roast||b.roast)||3,1,5),
+      kind,style,styleLabel,score:l.rating||(kind==='good'?4:kind==='adjust'?2:null),rated:!!l.rating,
+      temp:s.temp??null,ratio:s.ratio??null,dose:s.dose??null,grind:(s.grind||'').trim()};
+  }));
+}
+const avg=a=>a.length?a.reduce((x,y)=>x+y,0)/a.length:null;
+function countBy(arr,fn){const m=new Map();arr.forEach(x=>{const k=fn(x);if(k===null||k===undefined||k==='')return;m.set(k,(m.get(k)||0)+1);});return [...m.entries()].sort((a,b)=>b[1]-a[1]);}
+function topList(rows,fmt){return rows.length?rows.slice(0,5).map(([k,n])=>`<li><span>${esc(fmt?fmt(k):k)}</span><span>${n}×</span></li>`).join(''):'<li class="muted"><span>Noch keine Daten</span></li>';}
+function weekChart(shots){
+  const W=560,H=150,L=28,B=26,T=10,weeks=8,now=new Date(),day=(now.getDay()+6)%7;
+  const start=new Date(now.getFullYear(),now.getMonth(),now.getDate()-day-7*(weeks-1)).getTime();
+  const c=Array(weeks).fill(0); shots.forEach(s=>{const i=Math.floor((s.t-start)/(7*864e5));if(i>=0&&i<weeks)c[i]++;});
+  const max=Math.max(2,...c), step=max<=5?1:Math.ceil(max/4), top=Math.ceil(max/step)*step, ih=H-B-T, bw=(W-L)/weeks;
+  let g='';
+  for(let v=0;v<=top;v+=step){const y=T+ih-v/top*ih;g+=`<line x1="${L}" x2="${W}" y1="${y}" y2="${y}" stroke="var(--line)"/><text x="${L-6}" y="${y+4}" text-anchor="end" font-size="11" fill="var(--muted)" font-family="IBM Plex Mono,monospace">${v}</text>`;}
+  c.forEach((n,i)=>{const h=n/top*ih,x=L+i*bw+bw*0.18,w=bw*0.64,d=new Date(start+i*7*864e5);
+    if(n) g+=`<rect x="${x}" y="${T+ih-h}" width="${w}" height="${h}" rx="2" fill="${i===weeks-1?'var(--accent)':'var(--muted)'}"/>`;
+    g+=`<text x="${x+w/2}" y="${H-8}" text-anchor="middle" font-size="11" fill="var(--muted)" font-family="IBM Plex Mono,monospace">${d.getDate()}.${d.getMonth()+1}.</text>`;});
+  return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Shots pro Woche der letzten 8 Wochen">${g}</svg>`;
+}
+function renderStats(){
+  const entries=allEntries(), shots=entries.filter(e=>e.kind!=='reset');
+  const el=$('#statsBody');
+  if(!shots.length){
+    el.innerHTML=`<section class="panel wide"><h2>Noch keine Shots im Tagebuch</h2><p class="lead">Sobald du in der Werkstatt nach einem Shot auf <b>Shot war lecker – merken</b> tippst oder beim Dial-in eine Korrektur übernimmst, erscheinen hier deine meistgetrunkenen Bohnen, dein Ranking, die Profilstile je Röstgrad und deine typischen Einstellungen.</p></section>`;
+  } else {
+    const rated=shots.filter(s=>s.rated), sumDose=shots.reduce((a,s)=>a+(s.dose||0),0), good=shots.filter(s=>s.kind==='good').length;
+    // pro Bohne
+    const byBean=new Map(); shots.forEach(s=>{if(!byBean.has(s.bid))byBean.set(s.bid,{bean:s.bean,roast:s.roast,list:[]});byBean.get(s.bid).list.push(s);});
+    const beanStats=[...byBean.values()].map(b=>({...b,n:b.list.length,dose:b.list.reduce((a,s)=>a+(s.dose||0),0),good:b.list.filter(s=>s.kind==='good').length,
+      score:avg(b.list.map(s=>s.score).filter(x=>x!==null)),fav:(countBy(b.list,s=>s.styleLabel)[0]||[])[0]}));
+    const mostDrunk=beanStats.slice().sort((a,b)=>b.n-a.n||b.dose-a.dose), maxN=mostDrunk[0].n;
+    const ranking=beanStats.slice().sort((a,b)=>(b.score||0)-(a.score||0)||b.good-a.good||b.n-a.n);
+    // Röstgrad × Stil
+    const styleKeys=countBy(shots,s=>s.styleLabel).map(x=>x[0]);
+    const roasts=[1,2,3,4,5].filter(r=>shots.some(s=>s.roast===r));
+    const insights=[];
+    insights.push({c:ROAST[mostDrunk[0].roast-1].c,t:`Am meisten getrunken: <b>${esc(mostDrunk[0].bean)}</b> mit ${mostDrunk[0].n} Shot${mostDrunk[0].n===1?'':'s'}.`});
+    if(ranking[0].score) insights.push({c:ROAST[ranking[0].roast-1].c,t:`Am besten bewertet: <b>${esc(ranking[0].bean)}</b> mit Ø ${f1(ranking[0].score)} Sternen.`});
+    const mtxRows=roasts.map(r=>{
+      const list=shots.filter(s=>s.roast===r), cnt=countBy(list,s=>s.styleLabel), top=cnt[0];
+      const bestStyle=styleKeys.map(k=>({k,sc:avg(list.filter(s=>s.styleLabel===k&&s.score!==null).map(s=>s.score))})).filter(x=>x.sc!==null).sort((a,b)=>b.sc-a.sc)[0];
+      if(top) insights.push({c:ROAST[r-1].c,t:`Bei Röstgrad <b>${ROAST[r-1].n}</b> nimmst du meistens <b>${esc(top[0])}</b> (${top[1]} von ${list.length} Shots)${bestStyle&&bestStyle.k!==top[0]?`, am besten geschmeckt hat aber <b>${esc(bestStyle.k)}</b> (Ø ${f1(bestStyle.sc)} ★)`:''}.`});
+      const mx=top?top[1]:0;
+      return `<tr><th scope="row" style="border-bottom:1px solid var(--line);text-transform:none;letter-spacing:0;font-size:13.5px;color:var(--ink)"><span class="row" style="gap:6px;flex-wrap:nowrap"><span class="dot" style="background:${ROAST[r-1].c};margin:0"></span>${ROAST[r-1].n}</span></th>${styleKeys.map(k=>{const n=(cnt.find(x=>x[0]===k)||[])[1]||0;return `<td class="num${n&&n===mx?' hi':''}">${n||'·'}</td>`;}).join('')}<td>${bestStyle?`${esc(bestStyle.k)} <span class="muted">Ø ${f1(bestStyle.sc)}</span>`:'–'}</td></tr>`;
+    }).join('');
+    const setRows=roasts.map(r=>{const list=shots.filter(s=>s.roast===r), at=avg(list.map(s=>s.temp).filter(x=>x!==null)), ar=avg(list.map(s=>s.ratio).filter(x=>x!==null)), ad=avg(list.map(s=>s.dose).filter(x=>x!==null)), gr=(countBy(list,s=>s.grind)[0]||[])[0];
+      return `<tr><td><span class="row" style="gap:6px;flex-wrap:nowrap"><span class="dot" style="background:${ROAST[r-1].c};margin:0"></span>${ROAST[r-1].n}</span></td><td class="num">${list.length}</td><td class="num">${at!==null?f1(at)+' °C':'–'}</td><td class="num">${ar!==null?'1:'+f1(ar):'–'}</td><td class="num">${ad!==null?f1(ad)+' g':'–'}</td><td>${gr?esc(gr):'<span class="muted">–</span>'}</td></tr>`;}).join('');
+    const best=shots.slice().sort((a,b)=>(b.score||0)-(a.score||0)||(b.rated-a.rated)||b.t-a.t).slice(0,3);
+    el.innerHTML=`
+      <div class="gauges kpis wide">
+        <div class="g"><span class="label">Shots</span><span class="v">${shots.length}</span><span class="u">im Tagebuch</span></div>
+        <div class="g"><span class="label">Bohnen</span><span class="v">${byBean.size}</span><span class="u">mit Shots</span></div>
+        <div class="g"><span class="label">Kaffee</span><span class="v">${sumDose>=1000?f1(sumDose/1000)+'<small>kg</small>':Math.round(sumDose)+'<small>g</small>'}</span><span class="u">gemahlen</span></div>
+        <div class="g"><span class="label">Ø Bewertung</span><span class="v">${rated.length?f1(avg(rated.map(s=>s.score)))+'<small>★</small>':'–'}</span><span class="u">${rated.length} bewertet</span></div>
+        <div class="g"><span class="label">Lecker</span><span class="v">${Math.round(good/shots.length*100)}<small>%</small></span><span class="u">${good} von ${shots.length} Shots</span></div>
+      </div>
+      <section class="panel wide"><h2>Auf einen Blick</h2><ul class="insights">${insights.map(i=>`<li><span class="dot" style="background:${i.c}"></span><span>${i.t}</span></li>`).join('')}</ul></section>
+      <section class="panel"><h2>Meistgetrunken</h2><ul class="bars">${mostDrunk.slice(0,8).map(b=>`<li><span class="nm" title="${esc(b.bean)}">${esc(b.bean)}</span><span class="track"><span class="fill" style="display:block;width:${b.n/maxN*100}%"></span></span><span class="n">${b.n} Shot${b.n===1?'':'s'}${b.dose?` · ${Math.round(b.dose)} g`:''}</span></li>`).join('')}</ul></section>
+      <section class="panel"><h2>Shots pro Woche</h2><div class="weekchart">${weekChart(shots)}</div></section>
+      <section class="panel wide"><div class="row" style="justify-content:space-between"><h2>Ranking deiner Bohnen</h2><span class="bm">Ohne Sterne zählt „Lecker“ als 4 und „Korrektur“ als 2 Sterne.</span></div>
+        <div class="tbl"><table><thead><tr><th>#</th><th>Bohne</th><th>Bewertung</th><th class="num">Shots</th><th class="num">Lecker</th><th>Lieblingsprofil</th></tr></thead><tbody>
+        ${ranking.map((b,i)=>`<tr><td class="rk">${i+1}</td><td><span class="row" style="gap:6px;flex-wrap:nowrap"><span class="dot" style="background:${ROAST[b.roast-1].c};margin:0"></span><b style="font-weight:600">${esc(b.bean)}</b></span></td><td>${b.score?starsHTML(b.score)+` <span class="muted">${f1(b.score)}</span>`:'–'}</td><td class="num">${b.n}</td><td class="num">${b.good}</td><td>${b.fav?esc(b.fav):'–'}</td></tr>`).join('')}
+        </tbody></table></div></section>
+      <section class="panel wide"><h2>Profilstil nach Röstgrad</h2><p class="bm" style="margin:0">Wie oft du welchen Stil bei welchem Röstgrad genommen hast. Hervorgehoben ist der häufigste je Zeile.</p>
+        <div class="tbl"><table><thead><tr><th>Röstgrad</th>${styleKeys.map(k=>`<th class="num">${esc(k)}</th>`).join('')}<th>Beste Bewertung</th></tr></thead><tbody>${mtxRows}</tbody></table></div></section>
+      <section class="panel wide"><h2>Deine typischen Einstellungen je Röstgrad</h2>
+        <div class="tbl"><table><thead><tr><th>Röstgrad</th><th class="num">Shots</th><th class="num">Ø Temp.</th><th class="num">Ø Verhältnis</th><th class="num">Ø Dosis</th><th>Häufigster Mahlgrad</th></tr></thead><tbody>${setRows}</tbody></table></div></section>
+      <section class="panel wide"><h2>Meistgenutzte Einstellungen</h2>
+        <div class="chipcol">
+          <div><span class="label">Profilstil</span><ul>${topList(countBy(shots,s=>s.styleLabel))}</ul></div>
+          <div><span class="label">Temperatur</span><ul>${topList(countBy(shots,s=>s.temp),v=>f1(v)+' °C')}</ul></div>
+          <div><span class="label">Verhältnis</span><ul>${topList(countBy(shots,s=>s.ratio),v=>'1:'+f1(v))}</ul></div>
+          <div><span class="label">Dosis</span><ul>${topList(countBy(shots,s=>s.dose),v=>f1(v)+' g')}</ul></div>
+          <div><span class="label">Mahlgrad</span><ul>${topList(countBy(shots,s=>s.grind))}</ul></div>
+        </div></section>
+      <section class="panel wide"><h2>Deine besten Shots</h2><ul class="log">${best.map(s=>entryHTML(s.l,true)).join('')}</ul></section>`;
+  }
+  renderJournal(entries);
+}
+let jLimit=15;
+function fillSelect(sel,opts,label){const v=sel.value;sel.innerHTML=`<option value="">${label}</option>`+opts.map(([k,n])=>`<option value="${esc(k)}">${esc(n)}</option>`).join('');sel.value=opts.some(o=>String(o[0])===v)?v:'';}
+function renderJournal(entries){
+  entries=entries||allEntries();
+  const beanOpts=[...new Map(entries.map(e=>[e.bid,e.bean])).entries()];
+  fillSelect($('#jBean'),beanOpts,'Alle Bohnen');
+  fillSelect($('#jRoast'),[1,2,3,4,5].filter(r=>entries.some(e=>e.roast===r)).map(r=>[String(r),ROAST[r-1].n]),'Alle');
+  fillSelect($('#jStyle'),countBy(entries,e=>e.styleLabel).map(([k])=>[k,k]),'Alle');
+  const fb=$('#jBean').value, fr=$('#jRoast').value, fs=$('#jStyle').value, fk=$('#jKind').value, so=$('#jSort').value;
+  let list=entries.filter(e=>(!fb||e.bid===fb)&&(!fr||e.roast===+fr)&&(!fs||e.styleLabel===fs)&&(!fk||e.kind===fk));
+  list.sort(so==='best'?(a,b)=>(b.score||0)-(a.score||0)||b.t-a.t:(a,b)=>b.t-a.t);
+  $('#jCount').textContent=`${list.length} von ${entries.length} Einträgen`;
+  $('#moreJournal').hidden=list.length<=jLimit;
+  $('#journal').innerHTML=list.length?list.slice(0,jLimit).map(e=>entryHTML(e.l,true)).join(''):'<li class="plain muted" style="border:0">Keine Einträge für diese Auswahl.</li>';
+}
+['#jBean','#jRoast','#jStyle','#jKind','#jSort'].forEach(id=>$(id).addEventListener('change',()=>{jLimit=15;renderJournal();}));
+$('#moreJournal').addEventListener('click',()=>{jLimit+=15;renderJournal();});
+$('#statsBody').addEventListener('click',onLogClick);
+function showView(v){
+  const stats=v==='stats';
+  $('#viewStats').hidden=!stats; $('#viewWork').hidden=stats;
+  $('#tabWork').setAttribute('aria-selected',String(!stats)); $('#tabStats').setAttribute('aria-selected',String(stats));
+  if(stats) renderStats(); else renderLog();
+}
+document.querySelector('.tabs').addEventListener('click',e=>{const b=e.target.closest('[data-view]');if(b)showView(b.dataset.view);});
+
+/* ---------- Start ---------- */
+beans=loadLocal().filter(b=>b&&b.id);
+current=beans[0]||exampleBean();
+renderAll();
+if(location.hash==='#statistik') showView('stats');
+setStatus('Verbinde Speicher …');
+initDb();
+</script>
+
+</body>
+</html>

@@ -4,6 +4,12 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#24599A">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="apple-mobile-web-app-title" content="Profilwerkstatt">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
 <style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}img{max-width:100%}</style>
 </head>
 <body>
@@ -176,8 +182,11 @@ input:focus,select:focus{border-color:var(--ink)}
 .entry.editing{border-color:var(--ink)}
 .entry.editing input,.entry.editing select{background:var(--surface);border:1px solid var(--line);border-radius:4px;padding:6px 8px;width:100%;min-width:0}
 .logbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between;margin-bottom:8px}
-.note{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:10px}
-.note input{flex:1 1 180px;background:var(--bg);border:1px solid var(--line);border-radius:4px;padding:6px 9px;min-width:0}
+.shotbox{border:1px solid var(--line);border-radius:6px;padding:12px;margin-bottom:16px;display:flex;flex-direction:column;gap:10px;background:var(--sunk)}
+.shotbox input,.shotbox select{background:var(--surface);border:1px solid var(--line);border-radius:4px;padding:6px 9px;width:100%;min-width:0}
+.shotgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:10px 12px}
+.shotbox .saved{color:var(--good);font-size:13px;font-weight:600}
+.badge.shot{background:var(--press)}
 .headline{margin:0;font-size:1.05rem;line-height:1.45;max-width:72ch;padding:10px 12px;background:var(--sunk);border-radius:4px}
 .headline b{font-weight:600}
 .steps{margin:0;padding:0;list-style:none;counter-reset:st;display:flex;flex-direction:column;gap:0}
@@ -212,7 +221,7 @@ input:focus,select:focus{border-color:var(--ink)}
         <div class="f"><label class="label" for="jBean">Bohne</label><select id="jBean"></select></div>
         <div class="f"><label class="label" for="jRoast">Röstgrad</label><select id="jRoast"></select></div>
         <div class="f"><label class="label" for="jStyle">Profil</label><select id="jStyle"></select></div>
-        <div class="f"><label class="label" for="jKind">Art</label><select id="jKind"><option value="">Alle</option><option value="good">Lecker</option><option value="adjust">Korrektur</option><option value="reset">Zurückgesetzt</option></select></div>
+        <div class="f"><label class="label" for="jKind">Art</label><select id="jKind"><option value="">Alle</option><option value="shot">Shot</option><option value="good">Lecker</option><option value="adjust">Korrektur</option><option value="reset">Zurückgesetzt</option></select></div>
         <div class="f"><label class="label" for="jSort">Sortierung</label><select id="jSort"><option value="new">Neueste zuerst</option><option value="best">Beste Bewertung zuerst</option></select></div>
       </div>
       <ul class="log" id="journal"></ul>
@@ -296,8 +305,20 @@ input:focus,select:focus{border-color:var(--ink)}
           <ul class="why" id="why"></ul>
         </section>
         <section class="panel" aria-labelledby="hDial">
-          <h2 id="hDial">Dial-in: Wie war der Shot?</h2>
-          <p class="lead muted" style="font-size:14px">Wähle, was du schmeckst oder siehst. Ändere immer nur eine Sache pro Shot, zuerst den Mahlgrad.</p>
+          <h2 id="hDial">Shot eintragen &amp; Dial-in</h2>
+          <form class="shotbox" id="shotForm" autocomplete="off">
+            <div class="label">Gerade einen Shot gezogen?</div>
+            <div class="shotgrid">
+              <div class="f"><label class="label" for="sTime">Shotzeit (s)</label><input type="number" id="sTime" step="1" min="0" inputmode="numeric" placeholder="z. B. 30"></div>
+              <div class="f"><label class="label" for="sOut">In der Tasse (g)</label><input type="number" id="sOut" step="0.1" min="0" inputmode="decimal"></div>
+              <div class="f"><label class="label" for="sGrind">Mahlgrad</label><input type="text" id="sGrind" placeholder="z. B. Niche 12"></div>
+              <div class="f"><label class="label" for="sRating">Bewertung</label><select id="sRating"><option value="">–</option></select></div>
+            </div>
+            <div class="f"><label class="label" for="shotNote">Notiz</label><input type="text" id="shotNote" placeholder="Geschmack, Crema, Auffälligkeiten"></div>
+            <div class="row"><button class="btn primary small" type="submit">Shot speichern</button><span class="bm" id="shotMsg">Profil und alle Einstellungen werden automatisch mitgespeichert. Andere Werte änderst du danach über „Bearbeiten“.</span></div>
+          </form>
+          <div class="label" style="margin-bottom:6px">Nicht zufrieden? Was schmeckst du?</div>
+          <p class="lead muted" style="font-size:14px">Ändere immer nur eine Sache pro Shot, zuerst den Mahlgrad.</p>
           <div class="symptoms" id="symptoms"></div>
           <ul class="sugs" id="sugs"></ul>
           <div id="adjBox"></div>
@@ -305,10 +326,6 @@ input:focus,select:focus{border-color:var(--ink)}
             <div class="logbar">
               <span class="label">Shot-Tagebuch</span>
               <div class="styles" role="group" aria-label="Welche Einträge"><button type="button" class="chip" data-scope="bean" aria-pressed="true">Diese Bohne</button><button type="button" class="chip" data-scope="all" aria-pressed="false">Alle Bohnen</button></div>
-            </div>
-            <div class="note">
-              <input type="text" id="shotNote" placeholder="Notiz zum Shot, z. B. Mahlgrad 12, 31 s, schöne Crema" aria-label="Notiz zum Shot">
-              <button class="btn small" type="button" id="goodShot">Shot war lecker – merken</button>
             </div>
             <ul class="log" id="log"></ul>
             <button class="btn small" type="button" id="moreLog" hidden style="margin-top:8px">Ältere Einträge zeigen</button>
@@ -726,6 +743,7 @@ function renderOutput(){
   renderDial();
 }
 function renderDial(){
+  $('#sOut').placeholder=lastProfile?'Ziel '+lastProfile.yieldG:'';
   const b=current, p=lastProfile;
   $('#symptoms').innerHTML=SYM.map(s=>`<button type="button" class="chip" data-sym="${s.k}" aria-pressed="${activeSym===s.k}">${s.n}</button>`).join('');
   const sugs=activeSym?suggestions(activeSym,p):[];
@@ -759,7 +777,7 @@ function snapVals(s){
   if(s.rampT) out.push(`Anstieg ${s.rampT} s`);
   if(s.grind) out.push(`Mahlgrad ${s.grind}`);
   if(s.shotTime) out.push(`Shotzeit ${s.shotTime} s`);
-  if(s.realOut) out.push(`Tatsächlich ${s.realOut} g`);
+  if(s.realOut) out.push(`Tatsächlich ${f1(s.realOut)} g`);
   if(s.extra) out.push(s.extra);
   return out;
 }
@@ -815,7 +833,7 @@ function entryHTML(l,showBean){
   const key=l._bid+':'+l.t;
   if(editKey===key) return editHTML(l,key);
   if(!l.snap) return `<li class="plain" data-key="${esc(key)}"><time>${fmtTime(l.t)}</time>${l.rating?starsHTML(l.rating)+' ':''}${showBean?`<b>${esc(l._bean)}</b> · `:''}${esc(l.txt||'')}${l.note?` · Notiz: ${esc(l.note)}`:''}${entryActions(key)}</li>`;
-  const s={...l.snap,isFlow:l.snap.style==='other'?!!l.snap.exFlow&&!l.snap.peak:l.snap.isFlow}, badge={adjust:['adjust','Korrektur'],good:['good','Lecker'],reset:['reset','Zurückgesetzt']}[l.kind]||['reset','Eintrag'];
+  const s={...l.snap,isFlow:l.snap.style==='other'?!!l.snap.exFlow&&!l.snap.peak:l.snap.isFlow}, badge={shot:['shot','Shot'],adjust:['adjust','Korrektur'],good:['good','Lecker'],reset:['reset','Zurückgesetzt']}[l.kind]||['reset','Eintrag'];
   const meta=[ROAST[s.roast-1].n+' geröstet',(PROC[s.process]||PROC.washed).n,s.rob>0?`${100-s.rob}/${s.rob} Arabica/Robusta`:'100 % Arabica'];
   if(s.decaf) meta.push('entkoffeiniert'); if(s.milk) meta.push('mit Milch');
   let body='';
@@ -835,7 +853,7 @@ function entryHTML(l,showBean){
 }
 function renderAll(){renderList();if(current){renderForm();renderOutput();}if(!$('#viewStats').hidden)renderStats();}
 function touch(){readForm();if(!current.isNew){const i=beans.findIndex(x=>x.id===current.id);if(i>=0)beans[i]=current;schedule(current);}renderList();renderStyleSelect();renderOutput();}
-function select(b){current=b;activeSym=null;applied=new Set();renderAll();}
+function select(b){current=b;activeSym=null;applied=new Set();renderAll();resetShotForm();}
 function addLog(entry){
   const note=$('#shotNote').value.trim(); if(note){entry.note=note;$('#shotNote').value='';}
   current.log=(current.log||[]).concat({t:Date.now(),...entry}).slice(-60);
@@ -865,10 +883,26 @@ $('#sugs').addEventListener('click',e=>{const el=e.target.closest('[data-apply]'
   renderOutput();
 });
 $('#adjBox').addEventListener('click',e=>{if(e.target.id!=='resetAdj')return;current.adj={};addLog({kind:'reset',snap:snapshot(buildProfile(current),current)});applied=new Set();if(!current.isNew)schedule(current);renderOutput();});
-$('#goodShot').addEventListener('click',()=>{addLog({kind:'good',rating:4,snap:snapshot(lastProfile,current)});if(!current.isNew)schedule(current);
-  const last=current.log[current.log.length-1]; editKey=current.id+':'+last.t; delKey=null; logScope='bean';
+$('#sRating').innerHTML='<option value="">–</option>'+[5,4,3,2,1].map(n=>`<option value="${n}">${'★'.repeat(n)}${'☆'.repeat(5-n)}</option>`).join('');
+function resetShotForm(){$('#sTime').value='';$('#sOut').value='';$('#sRating').value='';$('#sGrind').value=current&&current.grind||'';}
+// ein Shot = aktuelles Profil + was an der Maschine wirklich passiert ist
+$('#shotForm').addEventListener('submit',e=>{e.preventDefault();
+  const num=id=>{const v=parseFloat($(id).value.replace(',','.'));return isNaN(v)?null:v;};
+  const snap=snapshot(lastProfile,current), t=num('#sTime'), out=num('#sOut'), g=$('#sGrind').value.trim(), r=num('#sRating');
+  if(t!==null) snap.shotTime=t;
+  if(out!==null){snap.realOut=out; if(snap.dose) snap.ratio=r1(out/snap.dose);}
+  snap.grind=g;
+  const entry={kind:'shot',snap}; if(r) entry.rating=r;
+  addLog(entry);
+  if(g&&g!==(current.grind||'')){current.grind=g;$('#fGrind').value=g;renderList();}
+  current.updated=Date.now(); if(!current.isNew) schedule(current);
+  editKey=null; delKey=null; logScope='bean';
   document.querySelectorAll('[data-scope]').forEach(x=>x.setAttribute('aria-pressed',String(x.dataset.scope===logScope)));
-  renderLog(); const f=$('#ed-shotTime'); if(f) f.focus();});
+  renderLog(); resetShotForm();
+  const m=$('#shotMsg'); m.innerHTML='<span class="saved">Gespeichert</span> · steht jetzt unten im Tagebuch.'; clearTimeout(m._t);
+  m._t=setTimeout(()=>{m.textContent='Profil und alle Einstellungen werden automatisch mitgespeichert. Andere Werte änderst du danach über „Bearbeiten“.';},3000);
+  if(!$('#viewStats').hidden) renderStats();
+});
 function findEntry(key){
   const i=key.lastIndexOf(':'), bid=key.slice(0,i), t=+key.slice(i+1);
   const bean=(current&&current.id===bid)?current:beans.find(b=>b.id===bid);
@@ -926,7 +960,7 @@ function allEntries(){
     const s=l.snap||{}, legacyGood=!l.kind&&/^Lecker/.test(l.txt||''), kind=l.kind||(legacyGood?'good':/zurückgesetzt/i.test(l.txt||'')?'reset':'adjust');
     const style=s.style||null, styleLabel=style==='other'?(s.styleName||'Anderes Profil'):style?(STYLES[style]||{n:style}).n:null;
     return {l:{...l,_bean:b.name||'Ohne Namen',_bid:b.id},t:l.t,bid:b.id,bean:b.name||'Ohne Namen',roast:clamp(+(s.roast||b.roast)||3,1,5),
-      kind,style,styleLabel,score:l.rating||(kind==='good'?4:kind==='adjust'?2:null),rated:!!l.rating,
+      kind,style,styleLabel,score:l.rating||(kind==='good'?4:kind==='adjust'?2:null),rated:!!l.rating,good:kind==='good'||l.rating>=4,
       temp:s.temp??null,ratio:s.ratio??null,dose:s.dose??null,grind:(s.grind||'').trim()};
   }));
 }
@@ -949,12 +983,12 @@ function renderStats(){
   const entries=allEntries(), shots=entries.filter(e=>e.kind!=='reset');
   const el=$('#statsBody');
   if(!shots.length){
-    el.innerHTML=`<section class="panel wide"><h2>Noch keine Shots im Tagebuch</h2><p class="lead">Sobald du in der Werkstatt nach einem Shot auf <b>Shot war lecker – merken</b> tippst oder beim Dial-in eine Korrektur übernimmst, erscheinen hier deine meistgetrunkenen Bohnen, dein Ranking, die Profilstile je Röstgrad und deine typischen Einstellungen.</p></section>`;
+    el.innerHTML=`<section class="panel wide"><h2>Noch keine Shots im Tagebuch</h2><p class="lead">Sobald du in der Werkstatt einen Shot mit <b>Shot speichern</b> einträgst oder beim Dial-in eine Korrektur übernimmst, erscheinen hier deine meistgetrunkenen Bohnen, dein Ranking, die Profilstile je Röstgrad und deine typischen Einstellungen.</p></section>`;
   } else {
-    const rated=shots.filter(s=>s.rated), sumDose=shots.reduce((a,s)=>a+(s.dose||0),0), good=shots.filter(s=>s.kind==='good').length;
+    const rated=shots.filter(s=>s.rated), sumDose=shots.reduce((a,s)=>a+(s.dose||0),0), good=shots.filter(s=>s.good).length;
     // pro Bohne
     const byBean=new Map(); shots.forEach(s=>{if(!byBean.has(s.bid))byBean.set(s.bid,{bean:s.bean,roast:s.roast,list:[]});byBean.get(s.bid).list.push(s);});
-    const beanStats=[...byBean.values()].map(b=>({...b,n:b.list.length,dose:b.list.reduce((a,s)=>a+(s.dose||0),0),good:b.list.filter(s=>s.kind==='good').length,
+    const beanStats=[...byBean.values()].map(b=>({...b,n:b.list.length,dose:b.list.reduce((a,s)=>a+(s.dose||0),0),good:b.list.filter(s=>s.good).length,
       score:avg(b.list.map(s=>s.score).filter(x=>x!==null)),fav:(countBy(b.list,s=>s.styleLabel)[0]||[])[0]}));
     const mostDrunk=beanStats.slice().sort((a,b)=>b.n-a.n||b.dose-a.dose), maxN=mostDrunk[0].n;
     const ranking=beanStats.slice().sort((a,b)=>(b.score||0)-(a.score||0)||b.good-a.good||b.n-a.n);
@@ -985,7 +1019,7 @@ function renderStats(){
       <section class="panel wide"><h2>Auf einen Blick</h2><ul class="insights">${insights.map(i=>`<li><span class="dot" style="background:${i.c}"></span><span>${i.t}</span></li>`).join('')}</ul></section>
       <section class="panel"><h2>Meistgetrunken</h2><ul class="bars">${mostDrunk.slice(0,8).map(b=>`<li><span class="nm" title="${esc(b.bean)}">${esc(b.bean)}</span><span class="track"><span class="fill" style="display:block;width:${b.n/maxN*100}%"></span></span><span class="n">${b.n} Shot${b.n===1?'':'s'}${b.dose?` · ${Math.round(b.dose)} g`:''}</span></li>`).join('')}</ul></section>
       <section class="panel"><h2>Shots pro Woche</h2><div class="weekchart">${weekChart(shots)}</div></section>
-      <section class="panel wide"><div class="row" style="justify-content:space-between"><h2>Ranking deiner Bohnen</h2><span class="bm">Ohne Sterne zählt „Lecker“ als 4 und „Korrektur“ als 2 Sterne.</span></div>
+      <section class="panel wide"><div class="row" style="justify-content:space-between"><h2>Ranking deiner Bohnen</h2><span class="bm">Lecker = 4 oder 5 Sterne. Ohne Sterne zählt „Lecker“ als 4 und „Korrektur“ als 2.</span></div>
         <div class="tbl"><table><thead><tr><th>#</th><th>Bohne</th><th>Bewertung</th><th class="num">Shots</th><th class="num">Lecker</th><th>Lieblingsprofil</th></tr></thead><tbody>
         ${ranking.map((b,i)=>`<tr><td class="rk">${i+1}</td><td><span class="row" style="gap:6px;flex-wrap:nowrap"><span class="dot" style="background:${ROAST[b.roast-1].c};margin:0"></span><b style="font-weight:600">${esc(b.bean)}</b></span></td><td>${b.score?starsHTML(b.score)+` <span class="muted">${f1(b.score)}</span>`:'–'}</td><td class="num">${b.n}</td><td class="num">${b.good}</td><td>${b.fav?esc(b.fav):'–'}</td></tr>`).join('')}
         </tbody></table></div></section>
@@ -1034,7 +1068,7 @@ document.querySelector('.tabs').addEventListener('click',e=>{const b=e.target.cl
 /* ---------- Start ---------- */
 beans=loadLocal().filter(b=>b&&b.id);
 current=beans[0]||exampleBean();
-renderAll();
+renderAll();resetShotForm();
 if(location.hash==='#statistik') showView('stats');
 setStatus('Verbinde Speicher …');
 initDb();
